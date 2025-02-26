@@ -23,4 +23,36 @@
       postfix: 'user-data',
       extension: 'yaml',
     }),
+  verify_setup(setup)::
+    assert std.isObject(setup);
+    assert std.objectHas(setup, 'ansible_inventory_path');
+    assert std.objectHas(setup, 'base_domain');
+    assert std.objectHas(setup, 'dns_servers');
+    assert std.objectHas(setup, 'host_architecture');
+    assert std.objectHas(setup, 'network');
+    assert std.objectHas(setup, 'orchestrator_name');
+    assert std.objectHas(setup, 'os_release_codename');
+    assert std.objectHas(setup, 'project_basefolder');
+    assert std.objectHas(setup, 'project_domain');
+    assert std.objectHas(setup, 'project_generator_path');
+    assert std.objectHas(setup, 'project_name');
+    assert std.objectHas(setup, 'project_root_path');
+    assert std.objectHas(setup, 'projects_folder');
+    assert std.objectHas(setup, 'provisionings');
+    assert std.objectHas(setup, 'virtual_machines');
+    assert std.isArray(setup.provisionings);
+    assert std.isArray(setup.virtual_machines);
+    true,
+  verify_orchestrator(orchestrator)::
+    assert std.isObject(orchestrator);
+    assert std.isFunction(orchestrator.project_utils);
+    assert std.isFunction(orchestrator.project_bootstrap);
+    assert std.isFunction(orchestrator.project_wrap_up);
+    assert std.isFunction(orchestrator.project_provisioning);
+    assert std.isFunction(orchestrator.project_delete);
+    assert std.isFunction(orchestrator.project_snapshot_restore);
+    assert std.isFunction(orchestrator.instances_status);
+    assert std.isFunction(orchestrator.instance_shell);
+    assert std.isFunction(orchestrator.instance_info);
+    true,
 }

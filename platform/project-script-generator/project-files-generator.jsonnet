@@ -9,15 +9,17 @@
 //   --jpath "${project_root_path:?}" \
 //   --jpath "${project_generator_path}" \
 //   --string "${project_generator_path}/project-files-generator.jsonnet"
+local orchestrator = import 'lib/orchestrator.libsonnet';
+local utils = import 'lib/utils.libsonnet';
 local setup = import 'setup.libsonnet';
 
-local orchestrator = import 'lib/orchestrator.libsonnet';
+assert utils.verify_setup(setup);
 
 local cloud_init = import 'lib/cloud_init.libsonnet';
-local utils = import 'lib/utils.libsonnet';
 
 function() {
   local orchestrator_implementation = orchestrator.get(setup.orchestrator_name),
+  assert utils.verify_orchestrator(orchestrator_implementation.use),
   'include/utils.sh': orchestrator_implementation.use.project_utils(setup),
   'instances-status.sh': orchestrator_implementation.use.instances_status(setup),
   'project-bootstrap.sh': orchestrator_implementation.use.project_bootstrap(setup),
