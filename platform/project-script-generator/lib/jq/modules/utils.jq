@@ -5,24 +5,24 @@ module {
   license: "SPDX-License-Identifier: Apache-2.0 OR MIT",
 };
 
-def select_from_arg_name(arg_name):
-  $ARGS.named."\(arg_name)" as $arg_value |
-  if $arg_value == null then (
-    {
+def select_from_arg_name(argName):
+  $ARGS.named."\(argName)" as $argValue |
+  if $argValue == null then
+    ({
       error: "arg value is null",
-      arg_name: "\(arg_name)",
-      arg_value: "\($arg_value)",
-      description: "Set the proper value using '--arg \(arg_name) <arg_value>'",
-    } |  halt_error(1)
-  ) else . end |
-  if .[$arg_value] != null then
-    .[$arg_value]
+      argName: "\(argName)",
+      argValue: "\($argValue)",
+      description: "Set the proper value using '--arg \(argName) <arg-value>'",
+    } |  halt_error(1))
+    else . end |
+  if .[$argValue] != null then
+    .[$argValue]
   else
     ({
       error: "Key not found in selection",
-      arg_name: "\(arg_name)",
-      arg_value: "\($arg_value)",
-      description: "Could not found key '\($arg_value)' in selection.\\nSet the proper value using '--arg \(arg_name) <arg_value>'.",
+      argName: "\(argName)",
+      argValue: "\($argValue)",
+      description: "Could not find key '\($argValue)' in selection.\\nSet the proper value using '--arg \(argName) <arg-value>'.",
       selected_input: .,
     } |  halt_error(1))
   end
