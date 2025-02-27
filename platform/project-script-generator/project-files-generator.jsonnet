@@ -28,6 +28,7 @@ function() {
   'project-restore-snapshots.sh': orchestrator_implementation.use.project_snapshot_restore(setup),
   'instance-shell.sh': orchestrator_implementation.use.instance_shell(setup),
   'project-delete.sh': orchestrator_implementation.use.project_delete(setup),
+  'project-configuration.sh': orchestrator_implementation.use.project_configuration(setup),
   'instance-info.sh': orchestrator_implementation.use.instance_info(setup),
 } + {
   ['assets/' + utils.cloudinit_user_data_filename(instance.hostname)]: cloud_init.user_data(setup, instance)

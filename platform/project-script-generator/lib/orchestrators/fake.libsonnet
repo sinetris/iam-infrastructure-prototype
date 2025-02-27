@@ -16,6 +16,8 @@
     self.fake_script(setup, 'utils'),
   project_bootstrap(setup):
     self.fake_script(setup, 'bootstrap'),
+  project_configuration(setup):
+    self.fake_script(setup, 'config'),
   project_wrap_up(setup):
     self.fake_script(setup, 'wrap-up'),
   project_provisioning(setup):

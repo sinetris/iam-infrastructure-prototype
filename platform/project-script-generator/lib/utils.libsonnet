@@ -46,15 +46,16 @@
     true,
   verify_orchestrator(orchestrator):
     assert std.isObject(orchestrator);
-    assert std.isFunction(orchestrator.project_utils);
-    assert std.isFunction(orchestrator.project_bootstrap);
-    assert std.isFunction(orchestrator.project_wrap_up);
-    assert std.isFunction(orchestrator.project_provisioning);
-    assert std.isFunction(orchestrator.project_delete);
-    assert std.isFunction(orchestrator.project_snapshot_restore);
-    assert std.isFunction(orchestrator.instances_status);
-    assert std.isFunction(orchestrator.instance_shell);
     assert std.isFunction(orchestrator.instance_info);
+    assert std.isFunction(orchestrator.instance_shell);
+    assert std.isFunction(orchestrator.instances_status);
+    assert std.isFunction(orchestrator.project_bootstrap);
+    assert std.isFunction(orchestrator.project_configuration);
+    assert std.isFunction(orchestrator.project_delete);
+    assert std.isFunction(orchestrator.project_provisioning);
+    assert std.isFunction(orchestrator.project_snapshot_restore);
+    assert std.isFunction(orchestrator.project_utils);
+    assert std.isFunction(orchestrator.project_wrap_up);
     true,
   ssh: {
     local ssh_default_args = {

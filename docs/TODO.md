@@ -257,7 +257,8 @@ section in [Kubernetes development tips](development/kubernetes.md).
   - [x] use `setup` instead of `config` where appropriate
   - [x] generate `include/utils.sh`
   - [ ] generate and include project config in scripts
-  - [ ] add script to show project generator config (`project-generator-config.sh`)
+  - [x] add `project_configuration` (create file `project-configuration.sh`)
+    - [ ] `project_configuration` shows generated project configuration
   - [ ] change `project_delete` (was `virtualmachines_destroy`)
     - [x] rename `virtualmachines_destroy` to `project_delete`
     - [x] rename `instances-destroy.sh` to `project-delete.sh`
