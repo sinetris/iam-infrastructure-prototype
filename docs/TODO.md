@@ -185,7 +185,7 @@ in some cases not the best tools for the job) to cover certain topics.
   - [x] test generated CA certificates for installed applications domains from
         the `linux-desktop` instance
 - [x] setup [pre-commit][pre-commit] for this project repository
-  - [ ] add `shellcheck` in `.pre-commit-config.yaml` (only for `project-management`)
+  - [x] add `shellcheck` in `.pre-commit-config.yaml` (only for `project-management`)
     - [ ] include more scripts in `shellcheck`
 - [ ] configure [Loki][grafana-loki], [Prometheus][prometheus],
       [Grafana][grafana], [Tempo][grafana-tempo]

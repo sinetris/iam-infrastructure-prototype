@@ -13,7 +13,7 @@ generated_project_path="${project_root_path:?}/${generated_project_relative_path
 valid_architectures=( amd64 x86_64 arm64 aarch64 )
 valid_orchestrators=( fake multipass vbox )
 
-: ${NO_COLOR:=0}
+: "${NO_COLOR:=0}"
 if [[ -z ${NO_COLOR+notset} ]] || [ "${NO_COLOR}" == "0" ]; then
   bold_text=$(tput bold)
   bad_result_text=$(tput setaf 1)
@@ -65,6 +65,24 @@ __usage=$(
 		  NO_COLOR                    ${gray_text}suppress colorized output${reset_text}
 	HELPMSG
 )
+
+element_is_in_array() {
+  if [ $# -lt 2 ]; then
+    echo "Usage: ${bold_text}$0 <element> <array>${reset_text}" >&2
+    exit 1
+  fi
+  local seeking="$1"
+  shift
+  local elements=("$@")
+  local found_code=0
+  local not_found_code=1
+  for element in "${elements[@]}"; do
+    if [[ "$element" == "$seeking" ]]; then
+      return ${found_code}
+    fi
+  done
+  return ${not_found_code}
+}
 
 usage() {
   echo -e "$__usage"
@@ -161,12 +179,12 @@ while [ $# -gt 0 ] && [ "$1" != "" ]; do
       provision=true
       ;;
     -o | --orchestrator)
-      generator_orchestrator=( "${2?Missing argument for  -o | --orchestrator}" ) ;
+      generator_orchestrator="${2?Missing argument for  -o | --orchestrator}"
       shift
       shift
       ;;
     -m | --machine-architecture)
-      host_architecture=( "${2?Missing argument for  -m | --machine-architecture}" ) ;
+      host_architecture="${2?Missing argument for  -m | --machine-architecture}"
       shift
       shift
       ;;
@@ -207,14 +225,18 @@ while [ $# -gt 0 ] && [ "$1" != "" ]; do
   esac
 done
 
-if [[ ! " ${valid_architectures[*]} " =~ " ${host_architecture} " ]]; then
-  printf "${bad_result_text}Error: 'host_architecture' must be one of: ${bold_text}${valid_architectures[*]}${reset_text}\n" >&2
+if ! element_is_in_array "${host_architecture}" "${valid_architectures[@]}"; then
+  echo "${status_error} ${bad_result_text}Error: 'host_architecture' must be one of: ${bold_text}${valid_architectures[*]}${reset_text}" >&2
   exit 1
 fi
 
-if [[ ! " ${valid_orchestrators[*]} " =~ " ${generator_orchestrator} " ]]; then
-  printf "${bad_result_text}Error: 'orchestrator' must be one of: ${bold_text}${valid_orchestrators[*]}${reset_text}\n" >&2
+if ! element_is_in_array "${generator_orchestrator}" "${valid_orchestrators[@]}"; then
+  echo "${status_error} ${bad_result_text}Error: 'orchestrator' must be one of: ${bold_text}${valid_orchestrators[*]}${reset_text}" >&2
   exit 1
+fi
+
+if $delete && ($bootstrap || $wrap_up || $provision); then
+  echo "${status_warning}${bad_result_text}${highlight_text} 'delete' shuldn't be used with 'bootstrap', 'wrap-up', 'provision', or 'restore-snapshots'. ${reset_text}"
 fi
 
 if $delete; then
@@ -226,27 +248,27 @@ if $generate; then
   echo "${status_info}${bold_text}${highlight_text} - Creating instances setup scripts ... - ${reset_text}"
   generate_ansible_ssh_keys
   generate_bootstrap_scripts
-  echo "${status_success}${bold_text}${highlight_text} - Instances setup scripts generated - ${reset_text}"
+  echo "${status_success}${bold_text}${good_result_text} - Instances setup scripts generated - ${reset_text}"
 fi
 if $bootstrap; then
-  echo "${status_info}${bold_text}${highlight_text} - Starting project network and instances creation ... - ${reset_text}"
+  echo "${status_info}${bold_text}${highlight_text} - Starting project network and instances creation ... (might take some time ${status_waiting}) - ${reset_text}"
   project_bootstrap
-  echo "${status_success}${bold_text}${highlight_text} - Project network and instances creation done - ${reset_text}"
+  echo "${status_success}${bold_text}${good_result_text} - Project network and instances creation done - ${reset_text}"
 fi
 if $wrap_up; then
   echo "${status_info}${bold_text}${highlight_text} - Running project wrap-up ... - ${reset_text}"
   instances_wrap_up
-  echo "${status_success}${bold_text}${highlight_text} - Project wrap-up done - ${reset_text}"
+  echo "${status_success}${bold_text}${good_result_text} - Project wrap-up done - ${reset_text}"
 fi
 if $provision; then
   echo "${status_info}${bold_text}${highlight_text} - Starting project instances provisioning ... - ${reset_text}"
   project_provisioning
-  echo "${status_success}${bold_text}${highlight_text} - Project instances provisioning done - ${reset_text}"
+  echo "${status_success}${bold_text}${good_result_text} - Project instances provisioning done - ${reset_text}"
 fi
 if $restore_snapshots; then
   echo "${status_info}${bold_text}${highlight_text} - Starting project instances snapshot restore ... - ${reset_text}"
   project_restore_snapshots
-  echo "${status_success}${bold_text}${highlight_text} - Project instances snapshot restore done - ${reset_text}"
+  echo "${status_success}${bold_text}${good_result_text} - Project instances snapshot restore done - ${reset_text}"
 fi
 
 echo "${status_success}${bold_text}${highlight_text} - All done - ${reset_text}"
@@ -255,8 +277,8 @@ echo " ${highlight_text}Project root path: ${bold_text}${project_root_path}${res
 
 if $bootstrap || $wrap_up || $provision; then
   echo
-  echo "${highlight_text}To ssh into an instance use ${bold_text}./instance-shell.sh <instance-name>${reset_text} from the generated folder."
-  echo "  ${bold_text}Example:${reset_text}"
+  echo "${info_text}To ssh into an instance use ${bold_text}./instance-shell.sh <instance-name>${reset_text} from the generated folder."
+  echo "  ${highlight_text}Example:${reset_text}"
   echo "  ${bold_text}cd ${generated_project_path}${reset_text}"
   echo "  ${bold_text}./instance-shell.sh ansible-controller${reset_text}"
 fi

@@ -37,20 +37,20 @@ repos:
       - id: check-json
       - id: pretty-format-json
         args: ["--autofix", "--no-sort-keys"]
-  # - repo: https://github.com/shellcheck-py/shellcheck-py
-  #   rev: v0.10.0.1
-  #   hooks:
-  #     - id: shellcheck
-  #       files: |
-  #         (?x)^(
-  #             project-management
-  #         )$
-  #       # # Include and fix more files
-  #       # files: |
-  #       #   (?x)^(
-  #       #       kubernetes\/.*|
-  #       #       platform\/ansible\/.*
-  #       #   )$
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        files: |
+          (?x)^(
+              project-management
+          )$
+        # # Include and fix more files
+        # files: |
+        #   (?x)^(
+        #       kubernetes\/.*|
+        #       platform\/ansible\/.*
+        #   )$
   # Markdown/CommonMark Linter
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.45.0
