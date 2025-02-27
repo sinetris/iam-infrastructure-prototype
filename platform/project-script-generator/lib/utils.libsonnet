@@ -67,6 +67,21 @@
           fi
         }
       |||,
+    generate_ansible_ssh_keys():
+      |||
+        generate_ansible_ssh_keys() {
+          ansible_ssh_key_file="${generated_project_relative_path:?}/assets/.ssh/id_ed25519"
+          if [ -f "${project_root_path:?}/${ansible_ssh_key_file:?}" ]; then
+            echo " ${status_info} Using existing SSH keys for ansible."
+          else
+            check_dependency 'ssh-keygen'
+            echo " ${status_action} Generating SSH keys for ansible ..."
+            mkdir -p "$(dirname "${project_root_path:?}/${ansible_ssh_key_file:?}")"
+            ssh-keygen -t ed25519 -C "automator@iam-demo.test" -f "${project_root_path:?}/${ansible_ssh_key_file:?}" -q -N ""
+            echo " ${status_success} SSH keys for ansible generated."
+          fi
+        }
+      |||,
     mac_address_functions():
       |||
         ### Generate MAC Address - Locally Administered Address (LAA) ###
