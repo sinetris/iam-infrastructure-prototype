@@ -293,6 +293,7 @@ section in [Kubernetes development tips](development/kubernetes.md).
           cidata-${instance_name:?}-user-data.yaml
         ```
 
+  - [ ] copy `jq/modules` and `jq/filters` to `generated/lib` folder
   - [ ] standardize scripts output
   - [ ] modify `provisionings` to accept templating
   - [ ] add optional `description` field to `provisionings`
@@ -341,8 +342,9 @@ section in [Kubernetes development tips](development/kubernetes.md).
   - [x] move generic functions to `utils.libsonnet`
   - [ ] Generic changes to `orchestrators`
     - [ ] add `ansible_user` to `instances_catalog_file` for each instance
-    - [ ] move `ssh_exec` to `utils.libsonnet`
-    - [ ] move `scp_file` to `utils.libsonnet`
+    - [x] move `ssh_exec` to `utils.libsonnet`
+    - [x] move `scp_file` to `utils.libsonnet`
+    - [x] move `ssh_check_retry` to `utils.libsonnet`
     - [ ] move `project_utils` to `utils.libsonnet`
   - [ ] `base_provisionings` for `ansible-controller` in `setup.jsonnet`
     - [ ] rename `machines_ips` to `instances_config`
@@ -402,7 +404,7 @@ section in [Kubernetes development tips](development/kubernetes.md).
 - [x] set default `options` as `-q -o ServerAliveInterval=300 -o ServerAliveCountMax=3`
       in `ssh_exec`
 - [ ] add all network interfaces in instances catalog json file
-- [ ] create instances snapshots
+- [x] create instances snapshots
 - [ ] use previous MAC addressses, if presents
 - [ ] use `os_images_path` from config
 - [ ] use `os_images_url` from config

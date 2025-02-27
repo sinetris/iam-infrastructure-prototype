@@ -1,4 +1,5 @@
 {
+  local utils = self,
   arrayIf(condition, array, elseArray=[]):
     assert std.isArray(array);
     assert std.isArray(elseArray);
@@ -18,7 +19,7 @@
     (if std.objectHas(opts, 'postfix') then '-' + opts.postfix else '') +
     (if std.objectHas(opts, 'extension') then '.' + opts.extension else ''),
   cloudinit_user_data_filename(hostname):
-    self.file_name(hostname, {
+    utils.file_name(hostname, {
       prefix: 'cidata',
       postfix: 'user-data',
       extension: 'yaml',
@@ -55,4 +56,116 @@
     assert std.isFunction(orchestrator.instance_shell);
     assert std.isFunction(orchestrator.instance_info);
     true,
+  ssh: {
+    local ssh_default_args = {
+      quiet: true,
+      options: {
+        IdentitiesOnly: 'yes',
+        ServerAliveCountMax: 3,
+        ServerAliveInterval: 120,
+        StrictHostKeyChecking: 'no',
+        UserKnownHostsFile: '/dev/null',
+      },
+      identity_files: [
+        '"${generated_files_path}/assets/.ssh/id_ed25519"',
+      ],
+    },
+    local ssh_options_to_array(args) =
+      if std.isString(args) then
+        [args]
+      else if std.isObject(args) then
+        (if std.objectHas(args, 'quiet') then ['-q'] else [])
+        + utils.arrayIf(
+          std.objectHas(args, 'options'),
+          ['-o %(key)s=%(value)s' % option for option in std.objectKeysValues(args.options)]
+        ) + utils.arrayIf(
+          std.objectHas(args, 'identity_files'),
+          ['-i %s' % identity_file for identity_file in args.identity_files]
+        )
+      else if std.isArray(args) then
+        args
+      else
+        [],
+    exec(instance_name, script, override_args='', default_args=ssh_default_args):
+      local args_string =
+        std.join(
+          ' \\\n\t',
+          (if std.isObject(override_args) && std.isObject(default_args) then
+             ssh_options_to_array(std.mergePatch(default_args, override_args))
+           else
+             ssh_options_to_array(override_args) + ssh_options_to_array(default_args))
+        );
+      |||
+        _instance_username=$(jq -r --arg host "%(instance_name)s" '.list.[$host].admin_username' "${instances_catalog_file:?}") && _exit_code=$? || _exit_code=$?
+        if [[ $_exit_code -ne 0 ]]; then
+          echo " ${status_error} Could not get 'admin_username' for instance '%(instance_name)s'" >&2
+          exit 2
+        fi
+        _instance_host=$(jq -r --arg host "%(instance_name)s" '.list.[$host].ipv4' "${instances_catalog_file:?}") && _exit_code=$? || _exit_code=$?
+        if [[ $_exit_code -ne 0 ]]; then
+          echo " ${status_error} Could not get 'ipv4' for instance '%(instance_name)s'" >&2
+          exit 2
+        fi
+        ssh %(args_string)s \
+          "${_instance_username:?}"@"${_instance_host:?}" \
+        %(script)s
+      ||| % {
+        instance_name: instance_name,
+        script: script,
+        args_string: args_string,
+      },
+    check_retry(instance_name, script='whoami', retries=20, sleep=5):
+      |||
+        _instance_name_to_check=%(instance_name)s
+        _check_retries=%(retries)s
+        _check_sleep=%(sleep)s
+        _instance_check_ssh_success=false
+        echo "${status_info} Wait for SSH and run command"
+        for retry_counter in $(seq $_check_retries 1); do
+          %(ssh_exec)s && _exit_code=$? || _exit_code=$?
+          if [[ $_exit_code -eq 0 ]]; then
+            echo "${status_success} SSH command ran successfully!"
+            _instance_check_ssh_success=true
+            break
+          else
+            echo "${status_waiting} Will retry command in ${_check_sleep} seconds. Retry left: ${retry_counter}"
+            sleep ${_check_sleep}
+          fi
+        done
+        if ${_instance_check_ssh_success}; then
+          echo "${status_success} Instance '${_instance_name_to_check:?}' is ready!"
+        else
+          echo "${status_warning} Instance '${_instance_name_to_check:?}' not ready!"
+        fi
+      ||| % {
+        instance_name: instance_name,
+        retries: retries,
+        sleep: sleep,
+        ssh_exec: utils.indent(
+          std.stripChars(
+            utils.ssh.exec(
+              '${_instance_name_to_check:?}',
+              script,
+            ), '\n'
+          ),
+          '\t',
+          ''
+        ),
+      },
+    copy_file(source, destination, override_args='', default_args=ssh_default_args):
+      local args_string =
+        std.join(
+          ' \\\n\t',
+          ssh_options_to_array(override_args) + ssh_options_to_array(default_args)
+        );
+      |||
+        scp %(args_string)s \
+          %(source)s \
+          %(destination)s
+      ||| % {
+        source: source,
+        destination: destination,
+        args_string: args_string,
+      },
+  },
 }
