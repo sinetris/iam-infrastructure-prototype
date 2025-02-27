@@ -347,7 +347,7 @@ section in [Kubernetes development tips](development/kubernetes.md).
     - [x] move `scp_file` to `utils.libsonnet`
     - [x] move `ssh_check_retry` to `utils.libsonnet`
     - [x] move `NO_COLOR` code to `utils.libsonnet`
-    - [ ] move `bash_mac_address_functions` to `utils.libsonnet`
+    - [x] move `bash_mac_address_functions` to `utils.libsonnet`
     - [ ] move `generic_project_config` code to `utils.libsonnet`
     - [ ] move `project_utils` to `utils.libsonnet`
     - [ ] add `check_dependency` to `utils.libsonnet`

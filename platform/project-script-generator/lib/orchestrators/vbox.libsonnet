@@ -1,91 +1,6 @@
 local utils = import 'lib/utils.libsonnet';
 
 // start: bash-utils
-local bash_mac_address_functions() =
-  |||
-    ### Generate MAC Address - Locally Administered Address (LAA) ###
-    # Description:
-    #   - IEEE 802c standard
-    #   - six octects (one octect is represented by two hexadecimal digits)
-    #   - YANG type: mac-address from RFC-699 (lowercase and separated by colon `:`)
-    #   - unicast Administratively Assigned Identifier (AAI) local identifier type
-    #     from Structured Local Address Plan (SLAP)
-    #     Essentially: second hexadecimal digit is `2`
-    # Input:
-    #   - first parameter
-    #     description: MAC address prefix
-    #     format: "X2:XX"
-    #     default: "42:12"
-    # Output: "X2:XX:XX:XX:XX:XX"
-    # Note for Input and Output: `X` is a lowercase hexadecimal digit
-    # Return:
-    #   0 on success
-    #   1 on invalid MAC address prefix
-    #   2 on invalid generated MAC address
-    function generate_mac_address {
-      _mac_address_prefix=${1:-"42:12"}
-      if ! [[ "${_mac_address_prefix}" =~ ^[0-9a-f]2:[0-9a-f]{2}$ ]]; then
-        echo "${status_error} Invalid MAC address prefix: '${_mac_address_prefix}'" >&2
-        return 1
-      fi
-      local _generated_mac_address=$(dd bs=1 count=4 if=/dev/random 2>/dev/null \
-        | hexdump -v \
-          -n 4 \
-          -e '/2 "'"${_mac_address_prefix}"'" 4/1 ":%02x"')
-      if [[ "${_generated_mac_address}" =~ ^[0-9a-f]2(:[0-9a-f]{2}){5}$ ]]; then
-        echo "${_generated_mac_address}"
-      else
-        echo "${status_error} Generated invalid MAC address: '${_generated_mac_address}'" >&2
-        return 2
-      fi
-      return 0
-    }
-
-    ### Convert MAC Address in VirtualBox format ###
-    # Input:
-    #   - first parameter
-    #     description: MAC address
-    #     format: "X2:XX:XX:XX:XX:XX"
-    #     note: `X` is an hexadecimal digit (case insensitive)
-    # Output:
-    #   format: "X2XXXXXXXXXX"
-    #   note: `X` is an uppercase hexadecimal digit
-    # Return:
-    #   0 on success
-    #   1 on invalid MAC address input
-    function convert_mac_address_to_vbox {
-      _mac_address=${1:?}
-      if ! [[ "${_mac_address}" =~ ^[0-9a-fA-F]2(:[0-9a-fA-F]{2}){5}$ ]]; then
-        echo "${status_error} Invalid MAC address: '${_mac_address}'" >&2
-        return 1
-      fi
-      awk -v mac_address="${_mac_address}" 'BEGIN { gsub(/:/, "", mac_address); print toupper(mac_address) }'
-      return 0
-    }
-
-    ### Convert MAC Address from VirtualBox format ###
-    # Input:
-    #   - first parameter
-    #     description: MAC address
-    #     format: "X2:XX:XX:XX:XX:XX"
-    #     note: `X` is an hexadecimal digit (case insensitive)
-    # Output:
-    #   format: "X2XXXXXXXXXX"
-    #   note: `X` is an uppercase hexadecimal digit
-    # Return:
-    #   0 on success
-    #   1 on invalid MAC address input
-    function convert_mac_address_from_vbox {
-      _mac_address=${1:?}
-      if ! [[ "${_mac_address}" =~ ^[0-9a-fA-F]{12}$ ]]; then
-        echo "${status_error} Invalid MAC address: '${_mac_address}'" >&2
-        return 1
-      fi
-      echo "${_mac_address}" | xxd -r -p | hexdump -v -n6 -e '/1 "%02x" 5/1 ":%02x"'
-      return 0
-    }
-  |||;
-
 local generic_project_config(setup) =
   assert std.isObject(setup);
   assert std.objectHas(setup, 'project_name');
@@ -310,7 +225,7 @@ local bash_utils(setup) =
     %(mac_address_functions)s
     # - end: utils
   ||| % {
-    mac_address_functions: bash_mac_address_functions(),
+    mac_address_functions: utils.bash.mac_address_functions(),
   };
 
 
