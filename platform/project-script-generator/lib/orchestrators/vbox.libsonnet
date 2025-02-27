@@ -410,7 +410,7 @@ local create_instance(setup, instance) =
     os_image_url="${os_images_url:?}/${os_release_codename:?}/current/${os_release_file:?}"
 
     os_image_path="${os_images_path}/${os_release_file:?}"
-    echo " ${status_info} Create Project data folder and subfolders: '${project_basefolder:?}'"
+    echo " ${status_info} Create instance data folder and subfolders: '${project_basefolder:?}'"
     mkdir -p "${instance_basefolder:?}"/{cidata,disks,shared,tmp,assets}
     if [ -f "${os_image_path:?}" ]; then
       echo " ${status_info} Using existing '${os_release_file:?}' from '${os_image_path:?}'!"
@@ -622,7 +622,6 @@ local create_instance(setup, instance) =
     mv "$PROJECT_TMP_FILE" "${instances_catalog_file:?}"
     echo "Wait for cloud-init to complete..."
 
-    _instance_command='sudo cloud-init status --wait --long'
     %(ssh_check_retry)s
     echo "${status_end_first} --------------  end creating '${instance_name:?}'  -------------- ${status_end_last}"
   ||| % {
@@ -630,7 +629,7 @@ local create_instance(setup, instance) =
     mounts: utils.shell_lines(mounts),
     ssh_check_retry: utils.ssh.check_retry(
       '${instance_name:?}',
-      '${_instance_command:?}',
+      'sudo cloud-init status --wait --long',
       '${instance_check_ssh_retries:?}',
       '${instance_check_sleep_time_seconds:?}',
     ),

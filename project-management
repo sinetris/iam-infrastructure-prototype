@@ -277,7 +277,7 @@ echo " ${highlight_text}Project root path: ${bold_text}${project_root_path}${res
 
 if $bootstrap || $wrap_up || $provision; then
   echo
-  echo "${info_text}To ssh into an instance use ${bold_text}./instance-shell.sh <instance-name>${reset_text} from the generated folder."
+  echo "${info_text}To ssh into an instance use ${bold_text}./instance-shell.sh <instance-name>${reset_text}${info_text} from the generated folder.${reset_text}"
   echo "  ${highlight_text}Example:${reset_text}"
   echo "  ${bold_text}cd ${generated_project_path}${reset_text}"
   echo "  ${bold_text}./instance-shell.sh ansible-controller${reset_text}"
