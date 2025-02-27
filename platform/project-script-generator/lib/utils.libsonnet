@@ -58,6 +58,15 @@
     assert std.isFunction(orchestrator.project_wrap_up);
     true,
   bash: {
+    check_dependency():
+      |||
+        check_dependency() {
+          if ! [ -x "$(command -v "$1")" ]; then
+            echo -e "${bad_result_text}Error: ${bold_text}$1${reset_text}${bad_result_text} is not installed.${reset_text}" >&2
+            exit 1
+          fi
+        }
+      |||,
     mac_address_functions():
       |||
         ### Generate MAC Address - Locally Administered Address (LAA) ###
