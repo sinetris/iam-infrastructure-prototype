@@ -1,5 +1,5 @@
 {
-  fake_script(setup, action)::
+  local fake_script(setup, action) =
     |||
       #!/usr/bin/env bash
 
@@ -12,22 +12,22 @@
         for instance in setup.virtual_machines
       ]),
     },
-  project_utils(setup)::
+  project_utils(setup):
     self.fake_script(setup, 'utils'),
-  project_bootstrap(setup)::
+  project_bootstrap(setup):
     self.fake_script(setup, 'bootstrap'),
-  project_wrap_up(setup)::
+  project_wrap_up(setup):
     self.fake_script(setup, 'wrap-up'),
-  project_provisioning(setup)::
+  project_provisioning(setup):
     self.fake_script(setup, 'provisioning'),
-  project_delete(setup)::
+  project_delete(setup):
     self.fake_script(setup, 'destroy'),
-  project_snapshot_restore(setup)::
+  project_snapshot_restore(setup):
     self.fake_script(setup, 'snapshot restore'),
-  instances_status(setup)::
+  instances_status(setup):
     self.fake_script(setup, 'list'),
-  instance_shell(setup)::
+  instance_shell(setup):
     self.fake_script(setup, 'shell'),
-  instance_info(setup)::
+  instance_info(setup):
     self.fake_script(setup, 'info'),
 }

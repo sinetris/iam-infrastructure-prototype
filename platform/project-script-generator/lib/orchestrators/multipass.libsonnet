@@ -367,7 +367,7 @@ local virtualmachine_command(setup, command) =
 
 // Exported functions
 {
-  project_utils(setup)::
+  project_utils(setup):
     |||
       #!/usr/bin/env bash
       #
@@ -403,7 +403,7 @@ local virtualmachine_command(setup, command) =
         status_action='[ACTION]'
       fi
     |||,
-  project_bootstrap(setup)::
+  project_bootstrap(setup):
     |||
       #!/usr/bin/env bash
       set -Eeuo pipefail
@@ -424,7 +424,7 @@ local virtualmachine_command(setup, command) =
         for instance in setup.virtual_machines
       ]),
     },
-  project_wrap_up(setup)::
+  project_wrap_up(setup):
     local instances = [instance.hostname for instance in setup.virtual_machines];
     |||
       #!/usr/bin/env bash
@@ -460,7 +460,7 @@ local virtualmachine_command(setup, command) =
         for instance in setup.virtual_machines
       ]),
     },
-  project_provisioning(setup)::
+  project_provisioning(setup):
     local provisionings =
       if std.objectHas(setup, 'provisionings') then
         setup.provisionings
@@ -477,7 +477,7 @@ local virtualmachine_command(setup, command) =
     ||| % {
       instances_provision: provision_instances(setup),
     },
-  project_delete(setup)::
+  project_delete(setup):
     assert std.isObject(setup);
     assert std.objectHas(setup, 'project_basefolder');
     |||
@@ -499,7 +499,7 @@ local virtualmachine_command(setup, command) =
         for instance in setup.virtual_machines
       ]),
     },
-  project_snapshot_restore(setup)::
+  project_snapshot_restore(setup):
     assert std.isObject(setup);
     |||
       #!/usr/bin/env bash
@@ -526,7 +526,7 @@ local virtualmachine_command(setup, command) =
         for instance in setup.virtual_machines
       ]),
     },
-  instances_status(setup)::
+  instances_status(setup):
     assert std.isObject(setup);
     assert std.objectHas(setup, 'virtual_machines');
     assert std.isArray(setup.virtual_machines);
@@ -546,8 +546,8 @@ local virtualmachine_command(setup, command) =
     ||| % {
       instances: std.join(' ', instances),
     },
-  instance_shell(setup)::
+  instance_shell(setup):
     virtualmachine_command(setup, 'shell'),
-  instance_info(setup)::
+  instance_info(setup):
     virtualmachine_command(setup, 'info --format yaml'),
 }

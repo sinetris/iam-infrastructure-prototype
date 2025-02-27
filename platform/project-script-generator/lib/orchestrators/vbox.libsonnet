@@ -1135,7 +1135,7 @@ local provision_instances(setup) =
 
 // Exported functions
 {
-  project_utils(setup)::
+  project_utils(setup):
     |||
       #!/usr/bin/env bash
       #
@@ -1187,7 +1187,7 @@ local provision_instances(setup) =
     ||| % {
       bash_utils: bash_utils(setup),
     },
-  project_bootstrap(setup)::
+  project_bootstrap(setup):
     assert std.objectHas(setup, 'virtual_machines');
     assert std.isArray(setup.virtual_machines);
     |||
@@ -1216,7 +1216,7 @@ local provision_instances(setup) =
         for instance in setup.virtual_machines
       ]),
     },
-  project_wrap_up(setup)::
+  project_wrap_up(setup):
     local instances = [instance.hostname for instance in setup.virtual_machines];
     local provisionings =
       if std.objectHas(setup, 'base_provisionings') then
@@ -1250,7 +1250,7 @@ local provision_instances(setup) =
         for instance in setup.virtual_machines
       ]),
     },
-  project_provisioning(setup)::
+  project_provisioning(setup):
     assert std.isObject(setup);
     local provisionings =
       if std.objectHas(setup, 'app_provisionings') then
@@ -1272,7 +1272,7 @@ local provision_instances(setup) =
       instances_provision: provision_instances(setup),
       project_config: project_config(setup),
     },
-  project_delete(setup)::
+  project_delete(setup):
     assert std.isObject(setup);
     |||
       #!/usr/bin/env bash
@@ -1297,7 +1297,7 @@ local provision_instances(setup) =
       ]),
       remove_network: remove_network(setup),
     },
-  project_snapshot_restore(setup)::
+  project_snapshot_restore(setup):
     assert std.isObject(setup);
     |||
       #!/usr/bin/env bash
@@ -1338,7 +1338,7 @@ local provision_instances(setup) =
         for instance in setup.virtual_machines
       ]),
     },
-  instances_status(setup)::
+  instances_status(setup):
     assert std.isObject(setup);
     assert std.objectHas(setup, 'virtual_machines');
     assert std.isArray(setup.virtual_machines);
@@ -1360,7 +1360,7 @@ local provision_instances(setup) =
     ||| % {
       instances: std.join(' ', instances),
     },
-  instance_shell(setup)::
+  instance_shell(setup):
     |||
       #!/usr/bin/env bash
       set -Eeuo pipefail
@@ -1394,7 +1394,7 @@ local provision_instances(setup) =
     ||| % {
       project_config: project_config(setup),
     },
-  instance_info(setup)::
+  instance_info(setup):
     assert std.isObject(setup);
     assert std.objectHas(setup, 'virtual_machines');
     assert std.isArray(setup.virtual_machines);
