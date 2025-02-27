@@ -255,12 +255,12 @@
              ssh_options_to_array(override_args) + ssh_options_to_array(default_args))
         );
       |||
-        _instance_username=$(jq -r --arg host "%(instance_name)s" '.list.[$host].admin_username' "${instances_catalog_file:?}") && _exit_code=$? || _exit_code=$?
+        _instance_username=$(jq -r --arg host "%(instance_name)s" '.list.[$host].admin_username' "${instances_catalog_file:?}") && _exit_code=0 || _exit_code=$?
         if [[ $_exit_code -ne 0 ]]; then
           echo " ${status_error} Could not get 'admin_username' for instance '%(instance_name)s'" >&2
           exit 2
         fi
-        _instance_host=$(jq -r --arg host "%(instance_name)s" '.list.[$host].ipv4' "${instances_catalog_file:?}") && _exit_code=$? || _exit_code=$?
+        _instance_host=$(jq -r --arg host "%(instance_name)s" '.list.[$host].ipv4' "${instances_catalog_file:?}") && _exit_code=0 || _exit_code=$?
         if [[ $_exit_code -ne 0 ]]; then
           echo " ${status_error} Could not get 'ipv4' for instance '%(instance_name)s'" >&2
           exit 2
@@ -283,7 +283,7 @@
         set +e
         for retry_counter in $(seq $_check_retries 1); do
           %(ssh_exec)s
-          _exit_code=$? || _exit_code=$?
+          _exit_code=$?
           if [[ $_exit_code -eq 0 ]]; then
             echo "${status_success} SSH command ran successfully!"
             _instance_check_ssh_success=true

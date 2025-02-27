@@ -118,7 +118,7 @@ local check_instance(instance) =
   |||
     _instance_name=%(hostname)s
     echo "Checking '${_instance_name}'..."
-    _instance_status=$(multipass info --format yaml ${_instance_name} 2>&1) && _exit_code=$? || _exit_code=$?
+    _instance_status=$(multipass info --format yaml ${_instance_name} 2>&1) && _exit_code=0 || _exit_code=$?
     if [[ $_exit_code -eq 0 ]]; then
     	echo "${status_success} Instance '${_instance_name}' found!"
     elif [[ $_exit_code -eq 2 ]] && [[ $_instance_status =~ 'does not exist' ]]; then
@@ -174,7 +174,7 @@ local inline_shell_provisioning(opts) =
   local post_command =
     if std.objectHas(opts, 'reboot_on_error') then
       |||
-        _exit_code=$? || _exit_code=$?
+        _exit_code=$?
         if [[ $_exit_code -eq 0 ]]; then
         	echo "No need to reboot"
         else
@@ -243,7 +243,7 @@ local create_instance(setup, instance) =
   |||
     %(instance_config)s
     echo "Checking '${instance_name}'..."
-    _instance_status=$(multipass info --format yaml ${instance_name} 2>&1) && _exit_code=$? || _exit_code=$?
+    _instance_status=$(multipass info --format yaml ${instance_name} 2>&1) && _exit_code=0 || _exit_code=$?
     if [[ $_exit_code -eq 0 ]]; then
     	echo "${status_success} Instance '${instance_name}' already exist!"
     elif [[ $_exit_code -eq 2 ]] && [[ $_instance_status =~ 'does not exist' ]]; then
@@ -256,7 +256,7 @@ local create_instance(setup, instance) =
     		--cloud-init "assets/cidata-${instance_name:?}-user-data.yaml" \
     		--timeout ${instance_check_timeout_seconds} \
     		%(mounts)s release:${os_release_codename}
-    	_instance_status=$(multipass info --format json ${instance_name} 2>&1) && _exit_code=$? || _exit_code=$?
+    	_instance_status=$(multipass info --format json ${instance_name} 2>&1) && _exit_code=0 || _exit_code=$?
     	if [[ $_exit_code -ne 0 ]]; then
     		echo "${status_error} Could not get instance '${instance_name}' configuration!'" >&2
     		exit 1
@@ -266,7 +266,7 @@ local create_instance(setup, instance) =
     		-- /bin/bash <<-'END'
     			ip route | awk '/^default/ {print $5; exit}'
     		END
-    	2>&1) && _exit_code=$? || _exit_code=$?
+    	2>&1) && _exit_code=0 || _exit_code=$?
     	if [[ $_exit_code -ne 0 ]]; then
     		echo "${status_error} Could not get instance '${instance_name}' network interface!'" >&2
     		exit 1
@@ -311,7 +311,7 @@ local snapshot_instance(instance) =
   |||
     _instance_name=%(hostname)s
     echo "Check '${_instance_name}' snapshot"
-    _instance_status=$(multipass info ${_instance_name} --snapshots 2>&1) && _exit_code=$? || _exit_code=$?
+    _instance_status=$(multipass info ${_instance_name} --snapshots 2>&1) && _exit_code=0 || _exit_code=$?
     if [[ $_exit_code -ne 0 ]]; then
     	echo " ${status_error} Instance snapshots for '${_instance_name}' - exit code '${_exit_code}'" >&2
     	echo ${_instance_status} >&2

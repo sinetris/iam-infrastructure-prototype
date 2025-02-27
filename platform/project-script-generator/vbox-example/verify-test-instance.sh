@@ -23,12 +23,12 @@ until $_command_success; do
 		echo "VirtualBox instance network check timeout!"  >&2
 		exit 1
 	fi
-	_cmd_status=$(VBoxManage guestproperty get "${instance_name:?}" "${_vbox_lan_ipv4_property:?}" 2>&1) && _exit_code=$? || _exit_code=$?
+	_cmd_status=$(VBoxManage guestproperty get "${instance_name:?}" "${_vbox_lan_ipv4_property:?}" 2>&1) && _exit_code=0 || _exit_code=$?
 	if [[ $_exit_code -ne 0 ]]; then
 		echo "Error in VBoxManage for 'guestproperty get'!"  >&2
 		exit 2
 	fi
-	_cmd_status=$(echo "${_cmd_status}" | grep --extended-regexp "${_ipv4_regex}" --only-matching --color=never 2>&1) && _exit_code=$? || _exit_code=$?
+	_cmd_status=$(echo "${_cmd_status}" | grep --extended-regexp "${_ipv4_regex}" --only-matching --color=never 2>&1) && _exit_code=0 || _exit_code=$?
 	if [[ $_exit_code -eq 0 ]]; then
 		_command_success=true
 		_instance_ipv4="${_cmd_status}"
@@ -48,7 +48,7 @@ _instance_status=$(VBoxManage guestcontrol \
 	--passwordfile ${instance_password_file:?} \
 	--exe "/bin/bash" \
 	--wait-stdout --wait-stderr \
-	-- -c "${_instance_command}" 2>&1) && _exit_code=$? || _exit_code=$?
+	-- -c "${_instance_command}" 2>&1) && _exit_code=0 || _exit_code=$?
 
 if [[ $_exit_code -eq 0 ]]; then
 	echo " ✅ Command '${_instance_command}' run on instance '${instance_name}' shows: '${_instance_status}'!"

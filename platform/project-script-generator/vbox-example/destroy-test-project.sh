@@ -6,7 +6,7 @@ this_file_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 . "${this_file_path}/configuration.sh"
 
 _instance_status=$(VBoxManage showvminfo "${instance_name:?}" --machinereadable 2>&1) \
-  && _exit_code=$? || _exit_code=$?
+  && _exit_code=0 || _exit_code=$?
 if [[ $_exit_code -eq 0 ]]; then
   echo "⚙️ Destroying instance '${instance_name:?}'!"
   if [[ $_instance_status =~ 'VMState="started"' ]] || [[ $_instance_status =~ 'VMState="running"' ]]; then
@@ -22,7 +22,7 @@ else
 fi
 
 _network_status=$(VBoxManage hostonlynet modify \
-  --name ${project_network_name} --disable 2>&1) && _exit_code=$? || _exit_code=$?
+  --name ${project_network_name} --disable 2>&1) && _exit_code=0 || _exit_code=$?
 if [[ $_exit_code -eq 0 ]]; then
   echo "⚙️ Project Network '${project_network_name}' will be removed!"
   VBoxManage hostonlynet remove \

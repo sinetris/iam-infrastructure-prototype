@@ -250,7 +250,7 @@ section in [Kubernetes development tips](development/kubernetes.md).
 ### Project and instances management
 
 - [x] rename `bunch-up` to `project-management`
-- [ ] change `&& _exit_code=$? || _exit_code=$?` to `&& _exit_code=0 || _exit_code=$?`
+- [x] change `&& _exit_code=$? || _exit_code=$?` to `&& _exit_code=0 || _exit_code=$?`
 - [ ] change `instances-script-generator`
   - [x] move generated scripts default path to project root
   - [x] rename folder to `project-script-generator`

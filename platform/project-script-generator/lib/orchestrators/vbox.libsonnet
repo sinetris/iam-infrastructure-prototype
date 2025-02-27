@@ -145,7 +145,7 @@ local instance_shutdown(instance_name, timeout=90, sleep=5) =
         exit 1
       fi
       _cmd_status=$(VBoxManage showvminfo "%(instance_name)s" --machinereadable 2>&1) \
-        && _exit_code=$? || _exit_code=$?
+        && _exit_code=0 || _exit_code=$?
       if [[ $_exit_code -ne 0 ]]; then
         echo "${status_error} Error checking '%(instance_name)s'" >&2
         exit 2
@@ -181,7 +181,7 @@ local instance_wait_started(instance_name, script='whoami', timeout=90, sleep=5)
         exit 1
       fi
       _cmd_status=$(VBoxManage showvminfo "${_instance_name_to_wait:?}" --machinereadable 2>&1) \
-        && _exit_code=$? || _exit_code=$?
+        && _exit_code=0 || _exit_code=$?
       if [[ $_exit_code -ne 0 ]]; then
         echo "${status_error} Error checking '${_instance_name_to_wait:?}'" >&2
         exit 2
@@ -235,7 +235,7 @@ local check_instance_exist_do(setup, instance, action_code) =
   |||
     instance_name=%(hostname)s
     echo " ${status_info} ${info_text}Checking '${instance_name:?}'...${reset_text}"
-    _instance_status=$(VBoxManage showvminfo "${instance_name:?}" --machinereadable 2>&1) && _exit_code=$? || _exit_code=$?
+    _instance_status=$(VBoxManage showvminfo "${instance_name:?}" --machinereadable 2>&1) && _exit_code=0 || _exit_code=$?
     if [[ $_exit_code -eq 0 ]] && ( \
       [[ $_instance_status =~ 'VMState="started"' ]] \
       || [[ $_instance_status =~ 'VMState="running"' ]] \
@@ -263,7 +263,7 @@ local create_network(setup) =
   |||
     echo " ${status_info} Checking Network '${project_network_name}'..."
     _project_network_status=$(VBoxManage hostonlynet modify \
-      --name ${project_network_name} --enable 2>&1) && _exit_code=$? || _exit_code=$?
+      --name ${project_network_name} --enable 2>&1) && _exit_code=0 || _exit_code=$?
     if [[ $_exit_code -eq 0 ]]; then
       echo " ${status_ok} Project Network '${project_network_name}' already exist!"
     elif [[ $_exit_code -eq 1 ]] && [[ $_project_network_status =~ 'does not exist' ]]; then
@@ -285,7 +285,7 @@ local create_network(setup) =
 local remove_network(setup) =
   |||
     _network_status=$(VBoxManage hostonlynet modify \
-      --name ${project_network_name} --disable 2>&1) && _exit_code=$? || _exit_code=$?
+      --name ${project_network_name} --disable 2>&1) && _exit_code=0 || _exit_code=$?
     if [[ $_exit_code -eq 0 ]]; then
       echo "${status_action} Project Network '${project_network_name}' will be removed!"
       VBoxManage hostonlynet remove \
@@ -385,7 +385,7 @@ local create_instance(setup, instance) =
       --arg select_field "os_type" \
       --raw-output \
       --from-file "${project_generator_path:?}/lib/jq/filrters/get_vbox_mapping_value.jq" \
-      "${vbox_os_mapping_file:?}" 2>&1) && _exit_code=$? || _exit_code=$?
+      "${vbox_os_mapping_file:?}" 2>&1) && _exit_code=0 || _exit_code=$?
 
     if [[ $_exit_code -ne 0 ]]; then
       echo " ${status_error} Could not get 'os_type'"
@@ -399,7 +399,7 @@ local create_instance(setup, instance) =
       --arg select_field "os_release_file" \
       --raw-output \
       --from-file "${project_generator_path:?}/lib/jq/filrters/get_vbox_mapping_value.jq" \
-      "${vbox_os_mapping_file:?}" 2>&1) && _exit_code=$? || _exit_code=$?
+      "${vbox_os_mapping_file:?}" 2>&1) && _exit_code=0 || _exit_code=$?
 
     if [[ $_exit_code -ne 0 ]]; then
       echo " ${status_error} Could not get 'os_release_file'"
@@ -586,7 +586,7 @@ local create_instance(setup, instance) =
         exit 1
       fi
       _cmd_status=$(VBoxManage guestproperty get "${instance_name:?}" "${_vbox_lab_nic_ipv4_property:?}" 2>&1) \
-        && _exit_code=$? || _exit_code=$?
+        && _exit_code=0 || _exit_code=$?
 
       if [[ $_exit_code -ne 0 ]]; then
         echo "${status_warning} Error in VBoxManage for 'guestproperty get ${instance_name:?} ${_vbox_lab_nic_ipv4_property:?}'" >&2
@@ -642,7 +642,7 @@ local destroy_instance(setup, instance) =
   |||
     %(instance_config)s
     _instance_status=$(VBoxManage showvminfo "${instance_name:?}" --machinereadable 2>&1) \
-      && _exit_code=$? || _exit_code=$?
+      && _exit_code=0 || _exit_code=$?
     if [[ $_exit_code -eq 0 ]]; then
       echo "${status_action} Destroying instance '${instance_name:?}'!"
       # Try to stop instance and ignore errors
@@ -668,7 +668,7 @@ local snapshot_instance(setup, instance) =
     %(instance_config)s
     _instance_snaphot_name=base-snapshot
     echo "Check '${instance_name}' snapshot"
-    _instance_status=$(VBoxManage snapshot ${instance_name} showvminfo ${_instance_snaphot_name} 2>&1) && _exit_code=$? || _exit_code=$?
+    _instance_status=$(VBoxManage snapshot ${instance_name} showvminfo ${_instance_snaphot_name} 2>&1) && _exit_code=0 || _exit_code=$?
     if [[ $_exit_code -eq 1 ]] && [[ $_instance_status =~ 'This machine does not have any snapshots' ]]; then
       echo "No snapshots found!"
       %(instance_shutdown)s
@@ -736,12 +736,12 @@ local file_provisioning(opts) =
       if is_remote_source then
         |||
           source_hostname=%(host)s
-          source_instance_username=$(jq -r --arg host "${source_hostname:?}" '.list.[$host].admin_username' "${instances_catalog_file:?}") && _exit_code=$? || _exit_code=$?
+          source_instance_username=$(jq -r --arg host "${source_hostname:?}" '.list.[$host].admin_username' "${instances_catalog_file:?}") && _exit_code=0 || _exit_code=$?
           if [[ $_exit_code -ne 0 ]]; then
             echo " ${status_error} Could not get 'admin_username' for instance '${source_hostname:?}'" >&2
             exit 2
           fi
-          source_instance_host=$(jq -r --arg host "${source_hostname:?}" '.list.[$host].ipv4' "${instances_catalog_file:?}") && _exit_code=$? || _exit_code=$?
+          source_instance_host=$(jq -r --arg host "${source_hostname:?}" '.list.[$host].ipv4' "${instances_catalog_file:?}") && _exit_code=0 || _exit_code=$?
           if [[ $_exit_code -ne 0 ]]; then
             echo " ${status_error} Could not get 'ipv4' for instance '${source_hostname:?}'" >&2
             exit 2
@@ -752,12 +752,12 @@ local file_provisioning(opts) =
       if is_remote_destination then
         |||
           destination_hostname=%(host)s
-          destination_instance_username=$(jq -r --arg host "${destination_hostname:?}" '.list.[$host].admin_username' "${instances_catalog_file:?}") && _exit_code=$? || _exit_code=$?
+          destination_instance_username=$(jq -r --arg host "${destination_hostname:?}" '.list.[$host].admin_username' "${instances_catalog_file:?}") && _exit_code=0 || _exit_code=$?
           if [[ $_exit_code -ne 0 ]]; then
             echo " ${status_error} Could not get 'admin_username' for instance '${destination_hostname:?}'" >&2
             exit 2
           fi
-          destination_instance_host=$(jq -r --arg host "${destination_hostname:?}" '.list.[$host].ipv4' "${instances_catalog_file:?}") && _exit_code=$? || _exit_code=$?
+          destination_instance_host=$(jq -r --arg host "${destination_hostname:?}" '.list.[$host].ipv4' "${instances_catalog_file:?}") && _exit_code=0 || _exit_code=$?
           if [[ $_exit_code -ne 0 ]]; then
             echo " ${status_error} Could not get 'ipv4' for instance '${destination_hostname:?}'" >&2
             exit 2
@@ -842,7 +842,7 @@ local inline_shell_provisioning(opts) =
         'whoami';
     if std.objectHas(opts, 'reboot_on_error') then
       |||
-        _exit_code=$? || _exit_code=$?
+        _exit_code=$?
         set -e
         _instance_name=%(destination_host)s
         if [[ $_exit_code -eq 0 ]]; then
@@ -853,7 +853,7 @@ local inline_shell_provisioning(opts) =
           _instance_check_sleep_seconds=2
           _instance_check_etries=10
           for _retry_counter in $(seq ${_instance_check_etries:?} 1); do
-            _instance_status=$(VBoxManage showvminfo "${_instance_name:?}" --machinereadable 2>&1) && _exit_code=$? || _exit_code=$?
+            _instance_status=$(VBoxManage showvminfo "${_instance_name:?}" --machinereadable 2>&1) && _exit_code=0 || _exit_code=$?
             if [[ $_exit_code -eq 0 ]] && [[ $_instance_status =~ 'VMState="running"' ]]; then
               echo " ${status_info} We can reboot '${_instance_name:?}'!"
               _instance_check_success=true
@@ -1138,7 +1138,7 @@ local provision_instances(setup) =
       %(project_config)s
 
       instance_hostname=${1:?}
-      instance_username=$(jq --exit-status -r --arg host "${instance_hostname:?}" '.list.[$host].admin_username' "${instances_catalog_file:?}") && _exit_code=$? || _exit_code=$?
+      instance_username=$(jq --exit-status -r --arg host "${instance_hostname:?}" '.list.[$host].admin_username' "${instances_catalog_file:?}") && _exit_code=0 || _exit_code=$?
       if [[ $_exit_code -ne 0 ]]; then
         echo " ${status_error} Could not get 'username' for instance '${instance_hostname:?}'" >&2
         exit 1

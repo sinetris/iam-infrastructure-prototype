@@ -38,7 +38,7 @@ function generate_mac_address {
 
 echo "Checking Network '${project_network_name}'..."
 _project_network_status=$(VBoxManage hostonlynet modify \
-	--name ${project_network_name} --enable 2>&1) && _exit_code=$? || _exit_code=$?
+	--name ${project_network_name} --enable 2>&1) && _exit_code=0 || _exit_code=$?
 if [[ $_exit_code -eq 0 ]]; then
 	echo " ✅ Project Network '${project_network_name}' already exist!"
 elif [[ $_exit_code -eq 1 ]] && [[ $_project_network_status =~ 'does not exist' ]]; then
@@ -57,7 +57,7 @@ fi
 
 echo "Creating instances"
 echo "Checking '${instance_name:?}'..."
-_instance_status=$(VBoxManage showvminfo "${instance_name:?}" --machinereadable 2>&1) && _exit_code=$? || _exit_code=$?
+_instance_status=$(VBoxManage showvminfo "${instance_name:?}" --machinereadable 2>&1) && _exit_code=0 || _exit_code=$?
 if [[ $_exit_code -eq 0 ]] && ( \
 	[[ $_instance_status =~ 'VMState="started"' ]] \
 	|| [[ $_instance_status =~ 'VMState="running"' ]] \
@@ -78,7 +78,7 @@ elif [[ $_exit_code -eq 1 ]] && [[ $_instance_status =~ 'Could not find a regist
 		--arg select_field "os_type" \
 		--raw-output \
 		--from-file "${_this_file_path}/../lib/jq/filrters/get_vbox_mapping_value.jq" \
-		"${vbox_os_mapping_file:?}" 2>&1) && _exit_code=$? || _exit_code=$?
+		"${vbox_os_mapping_file:?}" 2>&1) && _exit_code=0 || _exit_code=$?
 
 	if [[ $_exit_code -ne 0 ]]; then
 		echo " ❌ Could not get 'os_type'"
@@ -92,7 +92,7 @@ elif [[ $_exit_code -eq 1 ]] && [[ $_instance_status =~ 'Could not find a regist
 		--arg select_field "os_release_file" \
 		--raw-output \
 		--from-file "${_this_file_path}/../lib/jq/filrters/get_vbox_mapping_value.jq" \
-		"${vbox_os_mapping_file:?}" 2>&1) && _exit_code=$? || _exit_code=$?
+		"${vbox_os_mapping_file:?}" 2>&1) && _exit_code=0 || _exit_code=$?
 
 	if [[ $_exit_code -ne 0 ]]; then
 		echo " ❌ Could not get 'os_release_file'"
@@ -283,12 +283,12 @@ elif [[ $_exit_code -eq 1 ]] && [[ $_instance_status =~ 'Could not find a regist
 			echo "⚠️ VirtualBox instance network check timeout!"  >&2
 			exit 1
 		fi
-		_cmd_status=$(VBoxManage guestproperty get "${instance_name:?}" "${_vbox_lab_ipv4_property:?}" 2>&1) && _exit_code=$? || _exit_code=$?
+		_cmd_status=$(VBoxManage guestproperty get "${instance_name:?}" "${_vbox_lab_ipv4_property:?}" 2>&1) && _exit_code=0 || _exit_code=$?
 		if [[ $_exit_code -ne 0 ]]; then
 			echo "Error in VBoxManage for 'guestproperty get'!"  >&2
 			exit 2
 		fi
-		_cmd_status=$(echo "${_cmd_status}" | grep --extended-regexp "${_ipv4_regex}" --only-matching --color=never 2>&1) && _exit_code=$? || _exit_code=$?
+		_cmd_status=$(echo "${_cmd_status}" | grep --extended-regexp "${_ipv4_regex}" --only-matching --color=never 2>&1) && _exit_code=0 || _exit_code=$?
 		if [[ $_exit_code -eq 0 ]]; then
 			_command_success=true
 			_instance_ipv4="${_cmd_status}"
@@ -314,7 +314,7 @@ elif [[ $_exit_code -eq 1 ]] && [[ $_instance_status =~ 'Could not find a regist
 			-o StrictHostKeyChecking=no \
 			-o IdentitiesOnly=yes \
 			-t ${instance_username:?}@${_instance_ipv4:?} \
-			"${_instance_command:?}" && _exit_code=$? || _exit_code=$?
+			"${_instance_command:?}" && _exit_code=0 || _exit_code=$?
 		if [[ $_exit_code -eq 0 ]]; then
 			echo "✅ SSH command ran successfully!"
 			_instance_check_ssh_success=true
