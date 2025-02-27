@@ -343,13 +343,13 @@ local instance_shutdown(instance_name, timeout=90, sleep=5) =
     _sleep_time_seconds=%(sleep)s
     until $_command_success; do
       if (( _seconds_to_timeout <= 0 )); then
-        echo "${status_warning} Instance '%(instance_name)s' check timeout!" >&2
+        echo "${status_error} Instance '%(instance_name)s' check timeout!" >&2
         exit 1
       fi
       _cmd_status=$(VBoxManage showvminfo "%(instance_name)s" --machinereadable 2>&1) \
         && _exit_code=$? || _exit_code=$?
       if [[ $_exit_code -ne 0 ]]; then
-        echo "${status_warning} Error checking '%(instance_name)s'" >&2
+        echo "${status_error} Error checking '%(instance_name)s'" >&2
         exit 2
       elif [[ "$_cmd_status" =~ 'VMState="poweroff"' ]]; then
         echo "${status_info} Instance '%(instance_name)s' shutdown!"
@@ -412,6 +412,9 @@ local project_config(setup) =
     # - start: config
     %(generic_project_config)s
     %(vbox_project_config)s
+    echo "${status_info} ${info_text}${bold_text}Checking project '${project_name:?}'...${reset_text}"
+    mkdir -pv "${os_images_path:?}"
+    mkdir -pv "${project_basefolder:?}"
     # - end: config
   ||| % {
     generic_project_config: generic_project_config(setup),
@@ -439,7 +442,7 @@ local check_instance_exist_do(setup, instance, action_code) =
       [[ $_instance_status =~ 'VMState="started"' ]] \
       || [[ $_instance_status =~ 'VMState="running"' ]] \
     ); then
-      echo " ${status_info} Instance '${instance_name:?}' found!"
+      echo " ${status_ok} Instance '${instance_name:?}' found!"
     elif [[ $_exit_code -eq 0 ]] && [[ $_instance_status =~ 'VMState="poweroff"' ]]; then
       echo "${status_warning} Skipping instance '${instance_name:?}' - Already exist but in state 'poweroff'!"
     elif [[ $_exit_code -eq 0 ]]; then
@@ -464,7 +467,7 @@ local create_network(setup) =
     _project_network_status=$(VBoxManage hostonlynet modify \
       --name ${project_network_name} --enable 2>&1) && _exit_code=$? || _exit_code=$?
     if [[ $_exit_code -eq 0 ]]; then
-      echo " ${status_info} Project Network '${project_network_name}' already exist!"
+      echo " ${status_ok} Project Network '${project_network_name}' already exist!"
     elif [[ $_exit_code -eq 1 ]] && [[ $_project_network_status =~ 'does not exist' ]]; then
       echo " ${status_action} Creating Project Network '${project_network_name}'..."
       VBoxManage hostonlynet add \
@@ -473,6 +476,7 @@ local create_network(setup) =
         --lower-ip ${project_network_lower_ip:?} \
         --upper-ip ${project_network_upper_ip:?} \
         --enable
+      echo " ${status_success} Project Network '${project_network_name}' created."
     else
       echo " ${status_error} Project Network '${project_network_name}' - exit code '${_exit_code}'"
       echo ${_project_network_status}
@@ -489,7 +493,7 @@ local remove_network(setup) =
       VBoxManage hostonlynet remove \
         --name ${project_network_name}
     elif [[ $_exit_code -eq 1 ]] && [[ $_network_status =~ 'does not exist' ]]; then
-      echo "${status_info} Project Network '${project_network_name}' does not exist!"
+      echo "${status_ok} Project Network '${project_network_name}' does not exist!"
     else
       echo "${status_error} Project Network '${project_network_name}' - exit code '${_exit_code}'"
       echo ${_network_status}
@@ -573,8 +577,9 @@ local create_instance(setup, instance) =
       ]
     else [];
   |||
-    %(instance_config)s
+    echo "${status_start_first} -------------- begin creating '${instance_name:?}' -------------- ${status_start_last}"
     echo " ${status_action} Creating Instance '${instance_name:?}' ..."
+    %(instance_config)s
     vbox_os_mapping_file="${project_generator_path:?}/assets/vbox_os_mapping.json"
     vbox_instance_ostype=$(jq -L "${project_generator_path:?}/lib/jq/modules" \
       --arg architecture "${vbox_architecture:?}" \
@@ -747,7 +752,7 @@ local create_instance(setup, instance) =
       --boot2 dvd
     if [ "${vbox_instance_uart_mode}" == "file" ]; then
       _uart_file="${instance_basefolder:?}/tmp/tty0.log"
-      echo " - Set Serial Port to log boot sequence"
+      echo " ${status_memo} Set Serial Port to log boot sequence"
       touch "${_uart_file:?}"
       echo "   - To see log file:"
       echo "    tail -f -n +1 '${_uart_file:?}' | cat -v"
@@ -760,7 +765,7 @@ local create_instance(setup, instance) =
     else
       echo " - Ignore Serial Port settings"
     fi
-    echo " - Add shared folders"
+    echo " ${status_memo} Add shared folders"
     %(mounts)s
     echo " - Starting instance '${instance_name:?}' in mode '${vbox_instance_start_type:?}'"
     VBoxManage startvm "${instance_name:?}" --type "${vbox_instance_start_type:?}"
@@ -821,6 +826,7 @@ local create_instance(setup, instance) =
 
     _instance_command='sudo cloud-init status --wait --long'
     %(ssh_check_retry)s
+    echo "${status_end_first} --------------  end creating '${instance_name:?}'  -------------- ${status_end_last}"
   ||| % {
     instance_config: instance_config(setup, instance),
     mounts: utils.shell_lines(mounts),
@@ -845,7 +851,7 @@ local destroy_instance(setup, instance) =
       VBoxManage controlvm "${instance_name:?}" poweroff >/dev/null 2>&1 || true
       VBoxManage unregistervm "${instance_name:?}" --delete-all
     elif [[ $_exit_code -eq 1 ]] && [[ $_instance_status =~ 'Could not find a registered machine' ]]; then
-      echo "${status_info} Instance '${instance_name:?}' not found!"
+      echo "${status_ok} Instance '${instance_name:?}' not found!"
     else
       echo "${status_error} Skipping instance '${instance_name:?}' - exit code '${_exit_code}'"
       echo ${_instance_status}
@@ -1148,6 +1154,12 @@ local provision_instances(setup) =
         status_error=❌
         status_warning=⚠️
         status_info=ℹ️
+        status_ok=🆗
+        status_memo=📝
+        status_start_first=˹
+        status_start_last=˺
+        status_end_first=˻
+        status_end_last=˼
         status_waiting=💤
         status_action=⚙️
       else
@@ -1161,6 +1173,12 @@ local provision_instances(setup) =
         status_error='[ERROR]'
         status_warning='[WARNING]'
         status_info='[INFO]'
+        status_ok='[OK]'
+        status_memo='[MEMO]'
+        status_start_first='['
+        status_start_last=']'
+        status_end_first='['
+        status_end_last=']'
         status_waiting='[WAITING]'
         status_action='[ACTION]'
       fi
