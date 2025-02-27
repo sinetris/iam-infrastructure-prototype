@@ -346,7 +346,12 @@ section in [Kubernetes development tips](development/kubernetes.md).
     - [x] move `ssh_exec` to `utils.libsonnet`
     - [x] move `scp_file` to `utils.libsonnet`
     - [x] move `ssh_check_retry` to `utils.libsonnet`
+    - [x] move `NO_COLOR` code to `utils.libsonnet`
+    - [ ] move `bash_mac_address_functions` to `utils.libsonnet`
+    - [ ] move `generic_project_config` code to `utils.libsonnet`
     - [ ] move `project_utils` to `utils.libsonnet`
+    - [ ] add `check_dependency` to `utils.libsonnet`
+    - [ ] add `generate_ansible_ssh_keys` to `utils.libsonnet`
   - [ ] `base_provisionings` for `ansible-controller` in `setup.jsonnet`
     - [ ] rename `machines_ips` to `instances_config`
     - [ ] add `ansible_controller_user` to `inventory/group_vars/all`

@@ -1025,49 +1025,11 @@ local provision_instances(setup) =
       # Common Helpers Functions
       set -Eeuo pipefail
 
-      : ${NO_COLOR:=0}
-      if [[ -z ${NO_COLOR+notset} ]] || [ "${NO_COLOR}" == "0" ]; then
-        bold_text=$(tput bold)
-        bad_result_text=$(tput setaf 1)
-        good_result_text=$(tput setaf 2)
-        highlight_text=$(tput setaf 3)
-        info_text=$(tput setaf 4)
-        reset_text=$(tput sgr0)
-        status_success=✅
-        status_error=❌
-        status_warning=⚠️
-        status_info=ℹ️
-        status_ok=🆗
-        status_memo=📝
-        status_start_first=˹
-        status_start_last=˺
-        status_end_first=˻
-        status_end_last=˼
-        status_waiting=💤
-        status_action=⚙️
-      else
-        bold_text=''
-        bad_result_text=''
-        good_result_text=''
-        highlight_text=''
-        info_text=''
-        reset_text=''
-        status_success='[SUCCESS]'
-        status_error='[ERROR]'
-        status_warning='[WARNING]'
-        status_info='[INFO]'
-        status_ok='[OK]'
-        status_memo='[MEMO]'
-        status_start_first='['
-        status_start_last=']'
-        status_end_first='['
-        status_end_last=']'
-        status_waiting='[WAITING]'
-        status_action='[ACTION]'
-      fi
+      %(no_color)s
 
       %(bash_utils)s
     ||| % {
+      no_color: utils.bash.no_color(),
       bash_utils: bash_utils(setup),
     },
   project_bootstrap(setup):

@@ -374,35 +374,10 @@ local virtualmachine_command(setup, command) =
       # Common Helpers Functions
       set -Eeuo pipefail
 
-      : ${NO_COLOR:=0}
-      if [[ -z ${NO_COLOR+notset} ]] || [ "${NO_COLOR}" == "0" ]; then
-        bold_text=$(tput bold)
-        bad_result_text=$(tput setaf 1)
-        good_result_text=$(tput setaf 2)
-        highlight_text=$(tput setaf 3)
-        info_text=$(tput setaf 4)
-        reset_text=$(tput sgr0)
-        status_success=✅
-        status_error=❌
-        status_warning=⚠️
-        status_info=ℹ️
-        status_waiting=💤
-        status_action=⚙️
-      else
-        bold_text=''
-        bad_result_text=''
-        good_result_text=''
-        highlight_text=''
-        info_text=''
-        reset_text=''
-        status_success='[SUCCESS]'
-        status_error='[ERROR]'
-        status_warning='[WARNING]'
-        status_info='[INFO]'
-        status_waiting='[WAITING]'
-        status_action='[ACTION]'
-      fi
-    |||,
+      %(no_color)s
+    ||| % {
+      no_color: utils.bash.no_color(),
+    },
   project_bootstrap(setup):
     |||
       #!/usr/bin/env bash
