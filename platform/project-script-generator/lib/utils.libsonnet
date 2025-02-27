@@ -280,8 +280,10 @@
         _check_sleep=%(sleep)s
         _instance_check_ssh_success=false
         echo "${status_info} Wait for SSH and run command"
+        set +e
         for retry_counter in $(seq $_check_retries 1); do
-          %(ssh_exec)s && _exit_code=$? || _exit_code=$?
+          %(ssh_exec)s
+          _exit_code=$? || _exit_code=$?
           if [[ $_exit_code -eq 0 ]]; then
             echo "${status_success} SSH command ran successfully!"
             _instance_check_ssh_success=true
@@ -291,6 +293,7 @@
             sleep ${_check_sleep}
           fi
         done
+        set -e
         if ${_instance_check_ssh_success}; then
           echo "${status_success} Instance '${_instance_name_to_check:?}' is ready!"
         else
@@ -304,7 +307,11 @@
           std.stripChars(
             utils.ssh.exec(
               '${_instance_name_to_check:?}',
-              script,
+              |||
+                bash <<-'EOF'
+                %s
+                EOF
+              ||| % script,
             ), '\n'
           ),
           '\t',
