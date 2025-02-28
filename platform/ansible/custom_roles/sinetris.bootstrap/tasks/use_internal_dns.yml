@@ -1,22 +1,4 @@
 ---
-# - name: Generate /etc/systemd/resolved.conf.j2
-#   ansible.builtin.template:
-#     src: etc/systemd/resolved.conf.j2
-#     dest: /etc/systemd/resolved.conf
-#     mode: u=rw,g=r,o=r
-#   notify:
-#     - "reboot machine"
-# - name: Generate 50-dhcp-no-dns.network
-#   ansible.builtin.copy:
-#     dest: /etc/systemd/network/50-dhcp-no-dns.network
-#     content: |
-#       [Match]
-#       Name=en*
-#       [Network]
-#       DNS={{ bootstrap_network.dns|join(' ') }}
-#       Domains={{ bootstrap_network.domains|join(' ') }}
-#   notify:
-#     - "reboot machine"
 - name: Read cloud-init netplan file
   ansible.builtin.slurp:
     path: "{{ cloud_init_netplan_file_path }}"
@@ -42,29 +24,32 @@
       - path: cloudinit_netplan_data.network.ethernets.{{ network_interface_netplan_name }}.link-local
         value:
           - ipv4
-  register: updated
+  register: updated_netplan
 - name: Write back cloud-init netplan file
   ansible.builtin.copy:
-    content: "{{ updated.cloudinit_netplan_data | to_nice_yaml(indent=2, sort_keys=false)}}"
+    content: "{{ updated_netplan.cloudinit_netplan_data | to_nice_yaml(indent=2, sort_keys=false)}}"
     dest: "{{ cloud_init_netplan_file_path }}"
     mode: u=rw,g=r,o=
   when:
-    - updated.changed
+    - updated_netplan is changed
 - name: Reboot machine
   ansible.builtin.reboot:
-    reboot_timeout: 240
+    reboot_timeout: 300
   register: reboot_result
   retries: 3
   delay: 10
   until: reboot_result is not failed
-  when: >-
-    is_ansible_controller is not defined
-    or (is_ansible_controller is defined and not is_ansible_controller)
+  when:
+    - updated_netplan is changed
+    - >-
+      is_ansible_controller is not defined
+      or (is_ansible_controller is defined and not is_ansible_controller)
 - name: Ansible controller need reboot
   ansible.builtin.file:
     path: /var/run/reboot-required
     state: touch
     mode: u=rw,g=r,o=r
   when:
+    - updated_netplan is changed
     - is_ansible_controller is defined
     - is_ansible_controller
