@@ -114,10 +114,10 @@ local vbox_project_config(setup) =
     os_images_url=https://cloud-images.ubuntu.com
     # Serial Port mode:
     #   file = log boot sequence to file
-    vbox_instance_uart_mode=file
+    vbox_instance_uart_mode="file"
     vbox_basefolder=~/"VirtualBox VMs"
     # Start type: gui | headless | sdl | separate
-    vbox_instance_start_type=headless
+    vbox_instance_start_type="headless"
     %(set_architecture_configs)s
     # -- end: vbox-project-config
   ||| % {
@@ -154,7 +154,7 @@ local instance_shutdown(instance_name, timeout=90, sleep=5) =
         _command_success=true
       else
         echo "${status_waiting} Not ready yet! - Retry in ${_sleep_time_seconds} seconds - Timeout in ${_seconds_to_timeout} seconds"
-        sleep ${_sleep_time_seconds}
+        sleep "${_sleep_time_seconds}"
       fi
       (( _seconds_to_timeout = _check_timeout_seconds - (SECONDS - _start_time)))
     done
@@ -190,7 +190,7 @@ local instance_wait_started(instance_name, script='whoami', timeout=90, sleep=5)
         _command_success=true
       else
         echo "${status_waiting} Not ready yet! - Retry in ${_sleep_time_seconds} seconds - Timeout in ${_seconds_to_timeout} seconds"
-        sleep ${_sleep_time_seconds}
+        sleep "${_sleep_time_seconds}"
       fi
       (( _seconds_to_timeout = _check_timeout_seconds - (SECONDS - _start_time)))
     done
@@ -205,16 +205,6 @@ local instance_wait_started(instance_name, script='whoami', timeout=90, sleep=5)
     ),
   };
 
-local bash_utils(setup) =
-  |||
-    # - start: utils
-    %(mac_address_functions)s
-    # - end: utils
-  ||| % {
-    mac_address_functions: utils.bash.mac_address_functions(),
-  };
-
-
 local check_instance_exist_do(setup, instance, action_code) =
   assert std.isObject(instance);
   assert std.objectHas(instance, 'hostname');
@@ -222,22 +212,22 @@ local check_instance_exist_do(setup, instance, action_code) =
     instance_name=%(hostname)s
     echo " ${status_info} ${info_text}Checking '${instance_name:?}'...${reset_text}"
     _instance_status=$(VBoxManage showvminfo "${instance_name:?}" --machinereadable 2>&1) && _exit_code=0 || _exit_code=$?
-    if [[ $_exit_code -eq 0 ]] && ( \
+    if [[ $_exit_code -eq 0 ]] && { \
       [[ $_instance_status =~ 'VMState="started"' ]] \
-      || [[ $_instance_status =~ 'VMState="running"' ]] \
-    ); then
+      || [[ $_instance_status =~ 'VMState="running"' ]]; \
+    }; then
       echo " ${status_ok} Instance '${instance_name:?}' found!"
     elif [[ $_exit_code -eq 0 ]] && [[ $_instance_status =~ 'VMState="poweroff"' ]]; then
       echo "${status_warning} Skipping instance '${instance_name:?}' - Already exist but in state 'poweroff'!"
     elif [[ $_exit_code -eq 0 ]]; then
       echo "${status_error} Instance '${instance_name:?}' already exist but in UNMANAGED state!" >&2
-      echo ${_instance_status} >&2
+      echo "${_instance_status}" >&2
       exit 1
     elif [[ $_exit_code -eq 1 ]] && [[ $_instance_status =~ 'Could not find a registered machine' ]]; then
       %(action_code)s
     else
       echo "${status_error} Instance '${instance_name:?}' - exit code '${_exit_code}'"
-      echo ${_instance_status}
+      echo "${_instance_status}"
       exit 2
     fi
   ||| % {
@@ -263,7 +253,7 @@ local create_network(setup) =
       echo " ${status_success} Project Network '${project_network_name}' created."
     else
       echo " ${status_error} Project Network '${project_network_name}' - exit code '${_exit_code}'"
-      echo ${_project_network_status}
+      echo "${_project_network_status}"
       exit 2
     fi
   |||;
@@ -280,7 +270,7 @@ local remove_network(setup) =
       echo "${status_ok} Project Network '${project_network_name}' does not exist!"
     else
       echo "${status_error} Project Network '${project_network_name}' - exit code '${_exit_code}'"
-      echo ${_network_status}
+      echo "${_network_status}"
       exit 2
     fi
   |||;
@@ -408,12 +398,15 @@ local create_instance(setup, instance) =
     _instance_public_key=$(cat "${host_public_key_file:?}")
     echo " ${status_info} Create cloud-init configuration"
     # MAC Addresses in cloud-init network config (six octects, lowercase, separated by colon)
+    # shellcheck disable=SC2119
     _instance_mac_address_nat_cloud_init=$(generate_mac_address)
+    # shellcheck disable=SC2119
     _instance_mac_address_lab_cloud_init=$(generate_mac_address)
     # MAC Addresses in VirtualBox configuration (six octects, uppercase, no separators)
     _instance_mac_address_nat_vbox=$(convert_mac_address_to_vbox "${_instance_mac_address_nat_cloud_init}")
     _instance_mac_address_lab_vbox=$(convert_mac_address_to_vbox "${_instance_mac_address_lab_cloud_init}")
     echo "   - Create cloud-init 'network-config'"
+    # shellcheck disable=SC2016
     _domain="${project_domain}" \
     _mac_address_nat="${_instance_mac_address_nat_cloud_init}" \
     _mac_address_lab="${_instance_mac_address_lab_cloud_init}" \
@@ -439,7 +432,7 @@ local create_instance(setup, instance) =
       --name "${instance_name:?}" \
       --platform-architecture ${vbox_architecture:?} \
       --basefolder "${vbox_basefolder:?}" \
-      --ostype ${vbox_instance_ostype:?} \
+      --ostype "${vbox_instance_ostype:?}" \
       --register
     echo " - Set Screen scale to 200%%"
     VBoxManage setextradata \
@@ -450,12 +443,12 @@ local create_instance(setup, instance) =
       "${instance_name:?}" \
       --groups "/${project_name:?}" \
       --nic1 nat \
-      --mac-address1=${_instance_mac_address_nat_vbox} \
+      --mac-address1="${_instance_mac_address_nat_vbox}" \
       --nic-type1 82540EM \
       --cable-connected1 on \
       --nic2 hostonlynet \
       --host-only-net2 ${project_network_name} \
-      --mac-address2=${_instance_mac_address_lab_vbox} \
+      --mac-address2="${_instance_mac_address_lab_vbox}" \
       --nic-type2 82540EM \
       --cable-connected2 on \
       --nic-promisc2 allow-all
@@ -637,7 +630,7 @@ local destroy_instance(setup, instance) =
       echo "${status_ok} Instance '${instance_name:?}' not found!"
     else
       echo "${status_error} Skipping instance '${instance_name:?}' - exit code '${_exit_code}'"
-      echo ${_instance_status}
+      echo "${_instance_status}"
     fi
     VBoxManage closemedium dvd "${instance_cidata_iso_file:?}" --delete 2>/dev/null \
       || echo "${status_info} Disk '${instance_cidata_iso_file}' does not exist!"
@@ -663,7 +656,7 @@ local snapshot_instance(setup, instance) =
       %(instance_wait_started)s
     elif [[ $_exit_code -ne 0 ]]; then
       echo " ${status_error} Error checking snapshots for '${instance_name}' - exit code '${_exit_code}'" >&2
-      echo ${_instance_status} >&2
+      echo "${_instance_status}" >&2
       exit 2
     else
       echo "${status_success} Snapshot for '${instance_name}' already present!"
@@ -781,7 +774,8 @@ local file_provisioning(opts) =
                  sudo chown '%(destination_owner)s':'%(destination_owner)s' "${destination_file:?}"
                  sudo --user='%(destination_owner)s' --login --non-interactive mv "${destination_file:?}" '%(destination_file)s'
                  EOF
-               ||| % { destination_owner: opts.destination_owner, destination_file: opts.destination }
+               ||| % { destination_owner: opts.destination_owner, destination_file: opts.destination },
+               options={ use_client_vars_in_heredoc: true },
              )
            else '',
        }
@@ -918,20 +912,6 @@ local provision_instances(setup) =
 
 // Exported functions
 {
-  project_utils(setup):
-    |||
-      #!/usr/bin/env bash
-      #
-      # Common Helpers Functions
-      set -Eeuo pipefail
-
-      %(no_color)s
-
-      %(bash_utils)s
-    ||| % {
-      no_color: utils.bash.no_color(),
-      bash_utils: bash_utils(setup),
-    },
   project_bootstrap(setup):
     assert std.objectHas(setup, 'virtual_machines');
     assert std.isArray(setup.virtual_machines);
@@ -961,8 +941,7 @@ local provision_instances(setup) =
       #!/usr/bin/env bash
       set -Eeuo pipefail
       _this_file_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-      generated_files_path="${_this_file_path}"
-      . "${generated_files_path:?}/lib/utils.sh"
+      . "${_this_file_path:?}/utils.sh"
       # - start: config
       %(generic_project_config)s
       %(vbox_project_config)s
@@ -972,7 +951,14 @@ local provision_instances(setup) =
       vbox_project_config: vbox_project_config(setup),
     },
   project_show_configuration(setup):
-    '',
+    |||
+      #!/usr/bin/env bash
+      set -Eeuo pipefail
+      _this_file_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+      generated_files_path="${_this_file_path}"
+      . "${generated_files_path:?}/lib/utils.sh"
+      . "${generated_files_path:?}/lib/project_config.sh"
+    |||,
   project_wrap_up(setup):
     local instances = [instance.hostname for instance in setup.virtual_machines];
     local provisionings =
@@ -1119,6 +1105,10 @@ local provision_instances(setup) =
     |||
       #!/usr/bin/env bash
       set -Eeuo pipefail
+      _this_file_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+      generated_files_path="${_this_file_path}"
+      . "${generated_files_path:?}/lib/utils.sh"
+      . "${generated_files_path:?}/lib/project_config.sh"
 
       if [ $# -lt 1 ]; then
         instances=( %(instances)s )
@@ -1160,8 +1150,8 @@ local provision_instances(setup) =
         -o UserKnownHostsFile=/dev/null \
         -o StrictHostKeyChecking=no \
         -o IdentitiesOnly=yes \
-        -i "${generated_files_path}/assets/.ssh/id_ed25519" \
-        ${instance_username:?}@${instance_host:?}
+        -i "${generated_files_path:?}/assets/.ssh/id_ed25519" \
+        "${instance_username:?}"@"${instance_host:?}"
     |||,
   instance_info(setup):
     assert std.isObject(setup);
@@ -1173,6 +1163,10 @@ local provision_instances(setup) =
     |||
       #!/usr/bin/env bash
       set -Eeuo pipefail
+      _this_file_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+      generated_files_path="${_this_file_path}"
+      . "${generated_files_path:?}/lib/utils.sh"
+      . "${generated_files_path:?}/lib/project_config.sh"
 
       if [ $# -lt 1 ]; then
         echo "${info_text}Usage:${reset_text} ${bold_text}$0 VIRTUAL_MACHINE_IP${reset_text}"

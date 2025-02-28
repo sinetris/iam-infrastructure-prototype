@@ -56,10 +56,10 @@
     assert std.isFunction(orchestrator.project_prepare_config);
     assert std.isFunction(orchestrator.project_provisioning);
     assert std.isFunction(orchestrator.project_snapshot_restore);
-    assert std.isFunction(orchestrator.project_utils);
     assert std.isFunction(orchestrator.project_wrap_up);
     true,
   bash: {
+    local bash = self,
     check_dependency():
       |||
         check_dependency() {
@@ -67,6 +67,43 @@
             echo -e "${bad_result_text}Error: ${bold_text}$1${reset_text}${bad_result_text} is not installed.${reset_text}" >&2
             exit 1
           fi
+        }
+      |||,
+    join_array():
+      |||
+        join_array() {
+          if [ $# -lt 3 ]; then
+            echo "Usage: ${bold_text}$0 <separator> <array>${reset_text}" >&2
+            exit 1
+          fi
+          local separator="$1"
+          local first_item="$2"
+          shift 2
+          local other_items=("$@")
+          printf "'%s'" "$first_item"
+          for item in "${other_items[@]}"; do
+            printf "%s'%s'" "$separator" "$item"
+          done
+        }
+      |||,
+    element_is_in_array():
+      |||
+        element_is_in_array() {
+          if [ $# -lt 2 ]; then
+            echo "Usage: ${bold_text}$0 <element> <array>${reset_text}" >&2
+            exit 1
+          fi
+          local seeking="$1"
+          shift
+          local elements=("$@")
+          local found_code=0
+          local not_found_code=1
+          for element in "${elements[@]}"; do
+            if [[ "$element" == "$seeking" ]]; then
+              return ${found_code}
+            fi
+          done
+          return ${not_found_code}
         }
       |||,
     generate_ansible_ssh_keys():
@@ -106,12 +143,13 @@
         #   1 on invalid MAC address prefix
         #   2 on invalid generated MAC address
         function generate_mac_address {
-          _mac_address_prefix=${1:-"42:12"}
+          local _mac_address_prefix=${1:-"42:12"}
           if ! [[ "${_mac_address_prefix}" =~ ^[0-9a-f]2:[0-9a-f]{2}$ ]]; then
             echo "${status_error} Invalid MAC address prefix: '${_mac_address_prefix}'" >&2
             return 1
           fi
-          local _generated_mac_address=$(dd bs=1 count=4 if=/dev/random 2>/dev/null \
+          local _generated_mac_address
+          _generated_mac_address=$(dd bs=1 count=4 if=/dev/random 2>/dev/null \
             | hexdump -v \
               -n 4 \
               -e '/2 "'"${_mac_address_prefix}"'" 4/1 ":%02x"')
@@ -137,7 +175,7 @@
         #   0 on success
         #   1 on invalid MAC address input
         function convert_mac_address_to_vbox {
-          _mac_address=${1:?}
+          local _mac_address=${1:?}
           if ! [[ "${_mac_address}" =~ ^[0-9a-fA-F]2(:[0-9a-fA-F]{2}){5}$ ]]; then
             echo "${status_error} Invalid MAC address: '${_mac_address}'" >&2
             return 1
@@ -170,12 +208,7 @@
       |||,
     no_color():
       |||
-        #!/usr/bin/env bash
-        #
-        # Common Helpers Functions
-        set -Eeuo pipefail
-
-        : ${NO_COLOR:=0}
+        : "${NO_COLOR:=0}"
         if [[ -z ${NO_COLOR+notset} ]] || [ "${NO_COLOR}" == "0" ]; then
           bold_text=$(tput bold)
           bad_result_text=$(tput setaf 1)
@@ -216,6 +249,24 @@
           status_action='[ACTION]'
         fi
       |||,
+    helpers():
+      |||
+        #!/usr/bin/env bash
+        #
+        # Common Helpers Functions
+        set -Eeuo pipefail
+        %(no_color)s
+        %(check_dependency)s
+        %(join_array)s
+        %(mac_address_functions)s
+        %(element_is_in_array)s
+      ||| % {
+        no_color: bash.no_color(),
+        check_dependency: bash.check_dependency(),
+        join_array: bash.join_array(),
+        mac_address_functions: bash.mac_address_functions(),
+        element_is_in_array: bash.element_is_in_array(),
+      },
   },
   ssh: {
     local ssh_default_args = {
@@ -228,7 +279,7 @@
         UserKnownHostsFile: '/dev/null',
       },
       identity_files: [
-        '"${generated_files_path}/assets/.ssh/id_ed25519"',
+        '"${generated_files_path:?}/assets/.ssh/id_ed25519"',
       ],
     },
     local ssh_options_to_array(args) =
@@ -247,7 +298,13 @@
         args
       else
         [],
-    exec(instance_name, script, override_args='', default_args=ssh_default_args):
+    exec(instance_name, script, override_args='', default_args=ssh_default_args, options={}):
+      assert std.isObject(options);
+      local using_local_vars_in_heredoc =
+        if std.objectHas(options, 'use_client_vars_in_heredoc') && options.use_client_vars_in_heredoc then
+          '# shellcheck disable=SC2087'
+        else
+          '';
       local args_string =
         std.join(
           ' \\\n\t',
@@ -267,10 +324,12 @@
           echo " ${status_error} Could not get 'ipv4' for instance '%(instance_name)s'" >&2
           exit 2
         fi
+        %(using_local_vars_in_heredoc)s
         ssh %(args_string)s \
           "${_instance_username:?}"@"${_instance_host:?}" \
         %(script)s
       ||| % {
+        using_local_vars_in_heredoc: using_local_vars_in_heredoc,
         instance_name: instance_name,
         script: script,
         args_string: args_string,
@@ -283,7 +342,7 @@
         _instance_check_ssh_success=false
         echo "${status_info} Wait for SSH and run command"
         set +e
-        for retry_counter in $(seq $_check_retries 1); do
+        for retry_counter in $(seq "$_check_retries" 1); do
           %(ssh_exec)s
           _exit_code=$?
           if [[ $_exit_code -eq 0 ]]; then
@@ -292,7 +351,7 @@
             break
           else
             echo "${status_waiting} Will retry command in ${_check_sleep} seconds. Retry left: ${retry_counter}"
-            sleep ${_check_sleep}
+            sleep "${_check_sleep}"
           fi
         done
         set -e

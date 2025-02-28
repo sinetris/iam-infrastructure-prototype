@@ -41,6 +41,12 @@ repos:
     rev: v0.10.0.1
     hooks:
       - id: shellcheck
+        args:
+          - -P
+          - SCRIPTDIR
+          - -e
+          - SC2034
+          - -x
         files: |
           (?x)^(
               project-management

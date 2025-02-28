@@ -12,8 +12,6 @@
         for instance in setup.virtual_machines
       ]),
     },
-  project_utils(setup):
-    self.fake_script(setup, 'utils'),
   project_bootstrap(setup):
     self.fake_script(setup, 'bootstrap'),
   project_show_configuration(setup):

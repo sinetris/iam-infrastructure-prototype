@@ -276,7 +276,7 @@ section in [Kubernetes development tips](development/kubernetes.md).
   - [x] add `project_snapshot_restore` (create file `project-restore-snapshots.sh`)
   - [x] rename `virtualmachines_bootstrap` to `project_bootstrap` (create file `project-bootstrap.sh`)
   - [ ] split `project_bootstrap`
-    - [ ] `project_prepare_config` (create file `project-prepare-config.sh`)
+    - [x] `project_prepare_config` (create file `project-prepare-config.sh`)
       - [ ] generate configuration files in `project_basefolder`
     - [ ] `project_bootstrap`
       - [ ] create networks and instances based on config files from `project_basefolder`
@@ -357,8 +357,8 @@ section in [Kubernetes development tips](development/kubernetes.md).
     - [ ] move `project_utils` to `utils.libsonnet`
     - [x] add `check_dependency` to `utils.libsonnet`
     - [x] add `generate_ansible_ssh_keys` to `utils.libsonnet`
-    - [ ] add `join_array` to `utils.libsonnet`
-    - [ ] add `element_is_in_array` to `utils.libsonnet`
+    - [x] add `join_array` to `utils.libsonnet`
+    - [x] add `element_is_in_array` to `utils.libsonnet`
   - [ ] `base_provisionings` for `ansible-controller` in `setup.jsonnet`
     - [ ] rename `machines_ips` to `instances_config`
     - [ ] add `ansible_controller_user` to `inventory/group_vars/all`
