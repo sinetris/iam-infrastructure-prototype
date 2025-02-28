@@ -437,6 +437,8 @@ local virtualmachine_command(setup, command) =
         for instance in setup.virtual_machines
       ]),
     },
+  project_prepare_config(setup):
+    '',
   project_provisioning(setup):
     local provisionings =
       if std.objectHas(setup, 'provisionings') then

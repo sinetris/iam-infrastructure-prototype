@@ -20,6 +20,8 @@
     self.fake_script(setup, 'config'),
   project_wrap_up(setup):
     self.fake_script(setup, 'wrap-up'),
+  project_prepare_config(setup):
+    self.fake_script(setup, 'prepare-config'),
   project_provisioning(setup):
     self.fake_script(setup, 'provisioning'),
   project_delete(setup):

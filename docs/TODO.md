@@ -258,7 +258,8 @@ section in [Kubernetes development tips](development/kubernetes.md).
   - [x] rename `cloud-init-<instance_name>.yaml` to `cidata-<instance_name>-user-data.yaml`
   - [x] use `setup` instead of `config` where appropriate
   - [x] generate `include/utils.sh`
-  - [ ] generate and include project config in scripts
+  - [ ] change path from `include/utils.sh` to `lib/utils.sh`
+  - [ ] generate and include project config in scripts (create file `lib/project_config.sh`)
   - [x] add `project_configuration` (create file `project-configuration.sh`)
     - [ ] `project_configuration` shows generated project configuration
   - [ ] change `project_delete` (was `virtualmachines_destroy`)
@@ -284,8 +285,8 @@ section in [Kubernetes development tips](development/kubernetes.md).
   - [ ] change `instance_info` to show static instance info
   - [x] rename `virtualmachines_list` to `instances_status`
   - [x] rename `virtualmachine_shell` to `instance_shell`
-  - [ ] remove `envsubst` dependency
-  - [ ] use `yq` for cloud-init `user-data`
+  - [ ] use `yq` and remove `envsubst` dependency
+    - [ ] use `yq` for `cidata-network-config.yaml`
     - [ ] add ssh public key to user in cloud-init using `yq`
 
         ```sh
@@ -354,6 +355,8 @@ section in [Kubernetes development tips](development/kubernetes.md).
     - [ ] move `project_utils` to `utils.libsonnet`
     - [x] add `check_dependency` to `utils.libsonnet`
     - [x] add `generate_ansible_ssh_keys` to `utils.libsonnet`
+    - [ ] add `join_array` to `utils.libsonnet`
+    - [ ] add `element_is_in_array` to `utils.libsonnet`
   - [ ] `base_provisionings` for `ansible-controller` in `setup.jsonnet`
     - [ ] rename `machines_ips` to `instances_config`
     - [ ] add `ansible_controller_user` to `inventory/group_vars/all`

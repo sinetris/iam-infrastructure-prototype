@@ -29,6 +29,7 @@ function() {
   'instance-shell.sh': orchestrator_implementation.use.instance_shell(setup),
   'project-delete.sh': orchestrator_implementation.use.project_delete(setup),
   'project-configuration.sh': orchestrator_implementation.use.project_configuration(setup),
+  'project-prepare-config.sh': orchestrator_implementation.use.project_prepare_config(setup),
   'instance-info.sh': orchestrator_implementation.use.instance_info(setup),
 } + {
   ['assets/' + utils.cloudinit_user_data_filename(instance.hostname)]: cloud_init.user_data(setup, instance)

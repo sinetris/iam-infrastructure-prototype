@@ -44,25 +44,44 @@ else
   status_action='[ACTION]'
 fi
 
+
+join_array() {
+  if [ $# -lt 3 ]; then
+    echo "Usage: ${bold_text}$0 <separator> <array>${reset_text}" >&2
+    exit 1
+  fi
+  local separator="$1"
+  local first_item="$2"
+  shift 2
+  local other_items=("$@")
+  printf "'%s'" "$first_item"
+  for item in "${other_items[@]}"; do
+    printf "%s'%s'" "$separator" "$item"
+  done
+}
+
 __usage=$(
 	cat <<-HELPMSG
 		${highlight_text}Usage:${reset_text} ${bold_text}$0 [OPTIONS]${reset_text}
 
 		${highlight_text}${bold_text}Manage instances provisioning.${reset_text}
 
-		Options:
-		  -a, --all                   ${gray_text}Run all tasks to setup instances (in order: generate bootstrap wrap-up provision)${reset_text}
-		  -o, --orchestrator          ${gray_text}Select orchestrator for instances management scripts generator (default: '${generator_orchestrator}')${reset_text}
+		${highlight_text}Options:${reset_text}
+		  -a, --all                   ${gray_text}Run all tasks to setup the project (in order: generate configure bootstrap wrap-up provision)${reset_text}
+		  -o, --orchestrator          ${gray_text}Select orchestrator for project scripts generator (default: '${generator_orchestrator}')${reset_text}
+		                                  ${gray_text}Valid orchestrators: ${bold_text}$(join_array ', ' "${valid_orchestrators[@]}")${reset_text}
 		  -m, --machine-architecture  ${gray_text}Host architecture (default: '${host_architecture}' using 'uname -m')${reset_text}
-		  -g, --generate              ${gray_text}Generate instances management scripts${reset_text}
-		  -b, --bootstrap             ${gray_text}Bootstrap project network and instances using generated scripts${reset_text}
-		  -w, --wrap-up               ${gray_text}Wrap-up project basic setup using generated scripts${reset_text}
-		  -p, --provision             ${gray_text}Provision instances using generated scripts${reset_text}
-		  -r, --restore-snapshots     ${gray_text}Restore instances base snapshot using generated scripts${reset_text}
-		  -d, --delete                ${gray_text}Delete instances and local project data using generated scripts${reset_text}
+		                                  ${gray_text}Valid architectures: ${bold_text}$(join_array ', ' "${valid_architectures[@]}")${reset_text}
+		  -g, --generate              ${gray_text}Generate project management scripts${reset_text}
+		  -c, --configure             ${gray_text}Generate project configuration${reset_text}
+		  -b, --bootstrap             ${gray_text}Bootstrap project network and instances${reset_text}
+		  -w, --wrap-up               ${gray_text}Wrap-up project basic setup and create instances base snapshot${reset_text}
+		  -p, --provision             ${gray_text}Provision instances${reset_text}
+		  -r, --restore-snapshots     ${gray_text}Restore instances base snapshot${reset_text}
+		  -d, --delete                ${gray_text}Delete instances and local project data${reset_text}
 		  -h, --help                  ${gray_text}This help${reset_text}
-		Environment variables:
-		  NO_COLOR                    ${gray_text}suppress colorized output${reset_text}
+		${highlight_text}Environment variables:${reset_text}
+		  NO_COLOR                    ${gray_text}Suppress colorized output${reset_text}
 	HELPMSG
 )
 
@@ -138,6 +157,11 @@ generate_bootstrap_scripts() {
   chmod u+x "${generated_project_path}"/*.sh
 }
 
+project_configure() {
+  cd "${generated_project_path}"
+  ./project-prepare-config.sh
+}
+
 project_bootstrap() {
   cd "${generated_project_path}"
   ./project-bootstrap.sh
@@ -163,6 +187,7 @@ instances_delete() {
   ./project-delete.sh
 }
 
+configure=false
 bootstrap=false
 generate=false
 provision=false
@@ -174,6 +199,7 @@ while [ $# -gt 0 ] && [ "$1" != "" ]; do
     -a | --all)
       shift
       generate=true
+      configure=true
       bootstrap=true
       wrap_up=true
       provision=true
@@ -191,6 +217,10 @@ while [ $# -gt 0 ] && [ "$1" != "" ]; do
     -g | --generate)
       shift
       generate=true
+      ;;
+    -c | --configure)
+      shift
+      configure=true
       ;;
     -b | --bootstrap)
       shift
@@ -245,10 +275,15 @@ if $delete; then
 fi
 
 if $generate; then
-  echo "${status_info}${bold_text}${highlight_text} - Creating instances setup scripts ... - ${reset_text}"
+  echo "${status_info}${bold_text}${highlight_text} - Generating project management scripts ... - ${reset_text}"
   generate_ansible_ssh_keys
   generate_bootstrap_scripts
-  echo "${status_success}${bold_text}${good_result_text} - Instances setup scripts generated - ${reset_text}"
+  echo "${status_success}${bold_text}${good_result_text} - Project management scripts generated - ${reset_text}"
+fi
+if $configure; then
+  echo "${status_info}${bold_text}${highlight_text} - Preparing project configuration ... - ${reset_text}"
+  project_configure
+  echo "${status_success}${bold_text}${good_result_text} - Project configuration done - ${reset_text}"
 fi
 if $bootstrap; then
   echo "${status_info}${bold_text}${highlight_text} - Starting project network and instances creation ... (might take some time ${status_waiting}) - ${reset_text}"

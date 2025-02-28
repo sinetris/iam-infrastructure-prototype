@@ -210,9 +210,6 @@ local project_config(setup) =
     # - start: config
     %(generic_project_config)s
     %(vbox_project_config)s
-    echo "${status_info} ${info_text}${bold_text}Checking project '${project_name:?}'...${reset_text}"
-    mkdir -pv "${os_images_path:?}"
-    mkdir -pv "${project_basefolder:?}"
     # - end: config
   ||| % {
     generic_project_config: generic_project_config(setup),
@@ -953,22 +950,19 @@ local provision_instances(setup) =
       #!/usr/bin/env bash
       set -Eeuo pipefail
       _this_file_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-      . "${_this_file_path}/include/utils.sh"
       generated_files_path="${_this_file_path}"
+      . "${generated_files_path:?}/include/utils.sh"
 
       %(project_config)s
-      %(cidata_network_config_template)s
 
       echo "${status_info} ${info_text}${bold_text}Bootstrap Network${reset_text}"
       %(network_creation)s
 
       echo "${status_info} ${info_text}${bold_text}Bootstrap instances${reset_text}"
-      jq --null-input --indent 2 '{list: {}}' > "${instances_catalog_file:?}"
       %(instances_creation)s
       echo "${status_info} ${info_text}Project instances created!${reset_text}"
     ||| % {
       project_config: project_config(setup),
-      cidata_network_config_template: std.stripChars(cidata_network_config_template(setup), '\n'),
       network_creation: create_network(setup),
       instances_creation: utils.shell_lines([
         check_instance_exist_do(setup, instance, utils.indent(create_instance(setup, instance), '\t'))
@@ -1010,6 +1004,26 @@ local provision_instances(setup) =
         snapshot_instance(setup, instance)
         for instance in setup.virtual_machines
       ]),
+    },
+  project_prepare_config(setup):
+    |||
+      #!/usr/bin/env bash
+      #
+      # Prepare project configuration
+      set -Eeuo pipefail
+      _this_file_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+      generated_files_path="${_this_file_path}"
+      . "${generated_files_path:?}/include/utils.sh"
+
+      %(project_config)s
+      echo "${status_info} ${info_text}Configure project '${bold_text}${project_name:?}${reset_text}${info_text}'...${reset_text}"
+      mkdir -pv "${os_images_path:?}"
+      mkdir -pv "${project_basefolder:?}"
+      jq --null-input --indent 2 '{list: {}}' > "${instances_catalog_file:?}"
+      %(cidata_network_config_template)s
+    ||| % {
+      project_config: project_config(setup),
+      cidata_network_config_template: std.stripChars(cidata_network_config_template(setup), '\n'),
     },
   project_provisioning(setup):
     assert std.isObject(setup);

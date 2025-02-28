@@ -52,6 +52,7 @@
     assert std.isFunction(orchestrator.project_bootstrap);
     assert std.isFunction(orchestrator.project_configuration);
     assert std.isFunction(orchestrator.project_delete);
+    assert std.isFunction(orchestrator.project_prepare_config);
     assert std.isFunction(orchestrator.project_provisioning);
     assert std.isFunction(orchestrator.project_snapshot_restore);
     assert std.isFunction(orchestrator.project_utils);
