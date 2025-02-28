@@ -258,10 +258,12 @@ section in [Kubernetes development tips](development/kubernetes.md).
   - [x] rename `cloud-init-<instance_name>.yaml` to `cidata-<instance_name>-user-data.yaml`
   - [x] use `setup` instead of `config` where appropriate
   - [x] generate `include/utils.sh`
-  - [ ] change path from `include/utils.sh` to `lib/utils.sh`
-  - [ ] generate and include project config in scripts (create file `lib/project_config.sh`)
+  - [x] change path from `include/utils.sh` to `lib/utils.sh`
+  - [x] generate and include project config in scripts (create file `lib/project_config.sh`)
   - [x] add `project_configuration` (create file `project-configuration.sh`)
-    - [ ] `project_configuration` shows generated project configuration
+  - [ ] rename `project_configuration` to `project_show_configuration` (create
+        file `project-show-configuration.sh`)
+    - [ ] `project_show_configuration` shows generated project configuration
   - [ ] change `project_delete` (was `virtualmachines_destroy`)
     - [x] rename `virtualmachines_destroy` to `project_delete`
     - [x] rename `instances-destroy.sh` to `project-delete.sh`

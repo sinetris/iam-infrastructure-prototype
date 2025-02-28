@@ -20,7 +20,8 @@ local cloud_init = import 'lib/cloud_init.libsonnet';
 function() {
   local orchestrator_implementation = orchestrator.get(setup.orchestrator_name),
   assert utils.verify_orchestrator(orchestrator_implementation.use),
-  'include/utils.sh': orchestrator_implementation.use.project_utils(setup),
+  'lib/utils.sh': orchestrator_implementation.use.project_utils(setup),
+  'lib/project_config.sh': orchestrator_implementation.use.project_config(setup),
   'instances-status.sh': orchestrator_implementation.use.instances_status(setup),
   'project-bootstrap.sh': orchestrator_implementation.use.project_bootstrap(setup),
   'project-wrap-up.sh': orchestrator_implementation.use.project_wrap_up(setup),

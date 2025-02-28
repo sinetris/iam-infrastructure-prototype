@@ -205,17 +205,6 @@ local instance_wait_started(instance_name, script='whoami', timeout=90, sleep=5)
     ),
   };
 
-local project_config(setup) =
-  |||
-    # - start: config
-    %(generic_project_config)s
-    %(vbox_project_config)s
-    # - end: config
-  ||| % {
-    generic_project_config: generic_project_config(setup),
-    vbox_project_config: vbox_project_config(setup),
-  };
-
 local bash_utils(setup) =
   |||
     # - start: utils
@@ -951,9 +940,8 @@ local provision_instances(setup) =
       set -Eeuo pipefail
       _this_file_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
       generated_files_path="${_this_file_path}"
-      . "${generated_files_path:?}/include/utils.sh"
-
-      %(project_config)s
+      . "${generated_files_path:?}/lib/utils.sh"
+      . "${generated_files_path:?}/lib/project_config.sh"
 
       echo "${status_info} ${info_text}${bold_text}Bootstrap Network${reset_text}"
       %(network_creation)s
@@ -962,12 +950,26 @@ local provision_instances(setup) =
       %(instances_creation)s
       echo "${status_info} ${info_text}Project instances created!${reset_text}"
     ||| % {
-      project_config: project_config(setup),
       network_creation: create_network(setup),
       instances_creation: utils.shell_lines([
         check_instance_exist_do(setup, instance, utils.indent(create_instance(setup, instance), '\t'))
         for instance in setup.virtual_machines
       ]),
+    },
+  project_config(setup):
+    |||
+      #!/usr/bin/env bash
+      set -Eeuo pipefail
+      _this_file_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+      generated_files_path="${_this_file_path}"
+      . "${generated_files_path:?}/lib/utils.sh"
+      # - start: config
+      %(generic_project_config)s
+      %(vbox_project_config)s
+      # - end: config
+    ||| % {
+      generic_project_config: generic_project_config(setup),
+      vbox_project_config: vbox_project_config(setup),
     },
   project_configuration(setup):
     '',
@@ -982,10 +984,9 @@ local provision_instances(setup) =
       set -Eeuo pipefail
 
       _this_file_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-      . "${_this_file_path}/include/utils.sh"
       generated_files_path="${_this_file_path}"
-
-      %(project_config)s
+      . "${generated_files_path:?}/lib/utils.sh"
+      . "${generated_files_path:?}/lib/project_config.sh"
 
       echo "${status_info} ${info_text}Generating machines_config.json for ansible${reset_text}"
       cat "${instances_catalog_file:?}" > "${project_root_path}/%(ansible_inventory_path)s/machines_config.json"
@@ -995,7 +996,6 @@ local provision_instances(setup) =
       %(instances_snapshot)s
     ||| % {
       ansible_inventory_path: setup.ansible_inventory_path,
-      project_config: project_config(setup),
       instances_provision: utils.shell_lines([
         provision_instance(instance)
         for instance in setup.virtual_machines
@@ -1013,16 +1013,15 @@ local provision_instances(setup) =
       set -Eeuo pipefail
       _this_file_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
       generated_files_path="${_this_file_path}"
-      . "${generated_files_path:?}/include/utils.sh"
+      . "${generated_files_path:?}/lib/utils.sh"
+      . "${generated_files_path:?}/lib/project_config.sh"
 
-      %(project_config)s
       echo "${status_info} ${info_text}Configure project '${bold_text}${project_name:?}${reset_text}${info_text}'...${reset_text}"
       mkdir -pv "${os_images_path:?}"
       mkdir -pv "${project_basefolder:?}"
       jq --null-input --indent 2 '{list: {}}' > "${instances_catalog_file:?}"
       %(cidata_network_config_template)s
     ||| % {
-      project_config: project_config(setup),
       cidata_network_config_template: std.stripChars(cidata_network_config_template(setup), '\n'),
     },
   project_provisioning(setup):
@@ -1037,15 +1036,14 @@ local provision_instances(setup) =
       set -Eeuo pipefail
 
       _this_file_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-      . "${_this_file_path}/include/utils.sh"
       generated_files_path="${_this_file_path}"
-      %(project_config)s
+      . "${generated_files_path:?}/lib/utils.sh"
+      . "${generated_files_path:?}/lib/project_config.sh"
 
       echo "${status_info} ${info_text}Provisioning instances${reset_text}"
       %(instances_provision)s
     ||| % {
       instances_provision: provision_instances(setup),
-      project_config: project_config(setup),
     },
   project_delete(setup):
     assert std.isObject(setup);
@@ -1054,18 +1052,17 @@ local provision_instances(setup) =
       set -Eeuo pipefail
 
       _this_file_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-      . "${_this_file_path}/include/utils.sh"
       generated_files_path="${_this_file_path}"
+      . "${generated_files_path:?}/lib/utils.sh"
+      . "${generated_files_path:?}/lib/project_config.sh"
 
       echo "${status_info} ${info_text}Check instances${reset_text}"
-      %(project_config)s
       %(instances_destroy)s
       echo "${status_info} ${info_text}Deleting '${project_basefolder:?}'${reset_text}"
       rm -rfv "${project_basefolder:?}"
       %(remove_network)s
       echo "${status_success} ${good_result_text}Deleting project '${project_name:?}' completed!${reset_text}"
     ||| % {
-      project_config: project_config(setup),
       instances_destroy: utils.shell_lines([
         destroy_instance(setup, instance)
         for instance in setup.virtual_machines
@@ -1079,15 +1076,14 @@ local provision_instances(setup) =
       set -Eeuo pipefail
 
       _this_file_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-      . "${_this_file_path}/include/utils.sh"
       generated_files_path="${_this_file_path}"
-      %(project_config)s
+      . "${generated_files_path:?}/lib/utils.sh"
+      . "${generated_files_path:?}/lib/project_config.sh"
 
       echo "${status_info} ${info_text}Restore instances snapshot...${reset_text}"
       %(restore_instances_snapshot)s
       echo "${status_success} ${good_result_text}Restoring instances snapshot completed!${reset_text}"
     ||| % {
-      project_config: project_config(setup),
       restore_instances_snapshot: utils.shell_lines([
         |||
           %(instance_config)s
@@ -1140,15 +1136,15 @@ local provision_instances(setup) =
       #!/usr/bin/env bash
       set -Eeuo pipefail
 
+      _this_file_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+      generated_files_path="${_this_file_path}"
+      . "${generated_files_path:?}/lib/utils.sh"
+      . "${generated_files_path:?}/lib/project_config.sh"
+
       if [ $# -lt 1 ]; then
         echo "${info_text}Usage:${reset_text} ${bold_text}$0 VIRTUAL_MACHINE_IP${reset_text}" >&2
         exit 1
       fi
-
-      _this_file_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-      . "${_this_file_path}/include/utils.sh"
-      generated_files_path="${_this_file_path}"
-      %(project_config)s
 
       instance_hostname=${1:?}
       instance_username=$(jq --exit-status -r --arg host "${instance_hostname:?}" '.list.[$host].admin_username' "${instances_catalog_file:?}") && _exit_code=0 || _exit_code=$?
@@ -1166,9 +1162,7 @@ local provision_instances(setup) =
         -o IdentitiesOnly=yes \
         -i "${generated_files_path}/assets/.ssh/id_ed25519" \
         ${instance_username:?}@${instance_host:?}
-    ||| % {
-      project_config: project_config(setup),
-    },
+    |||,
   instance_info(setup):
     assert std.isObject(setup);
     assert std.objectHas(setup, 'virtual_machines');
