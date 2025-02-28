@@ -971,7 +971,7 @@ local provision_instances(setup) =
       generic_project_config: generic_project_config(setup),
       vbox_project_config: vbox_project_config(setup),
     },
-  project_configuration(setup):
+  project_show_configuration(setup):
     '',
   project_wrap_up(setup):
     local instances = [instance.hostname for instance in setup.virtual_machines];

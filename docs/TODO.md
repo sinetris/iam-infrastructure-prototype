@@ -261,7 +261,7 @@ section in [Kubernetes development tips](development/kubernetes.md).
   - [x] change path from `include/utils.sh` to `lib/utils.sh`
   - [x] generate and include project config in scripts (create file `lib/project_config.sh`)
   - [x] add `project_configuration` (create file `project-configuration.sh`)
-  - [ ] rename `project_configuration` to `project_show_configuration` (create
+  - [x] rename `project_configuration` to `project_show_configuration` (create
         file `project-show-configuration.sh`)
     - [ ] `project_show_configuration` shows generated project configuration
   - [ ] change `project_delete` (was `virtualmachines_destroy`)

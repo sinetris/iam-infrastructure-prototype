@@ -399,7 +399,7 @@ local virtualmachine_command(setup, command) =
         for instance in setup.virtual_machines
       ]),
     },
-  project_configuration(setup):
+  project_show_configuration(setup):
     '',
   project_wrap_up(setup):
     local instances = [instance.hostname for instance in setup.virtual_machines];

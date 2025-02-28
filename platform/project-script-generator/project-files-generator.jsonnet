@@ -29,7 +29,7 @@ function() {
   'project-restore-snapshots.sh': orchestrator_implementation.use.project_snapshot_restore(setup),
   'instance-shell.sh': orchestrator_implementation.use.instance_shell(setup),
   'project-delete.sh': orchestrator_implementation.use.project_delete(setup),
-  'project-configuration.sh': orchestrator_implementation.use.project_configuration(setup),
+  'project-show-configuration.sh': orchestrator_implementation.use.project_show_configuration(setup),
   'project-prepare-config.sh': orchestrator_implementation.use.project_prepare_config(setup),
   'instance-info.sh': orchestrator_implementation.use.instance_info(setup),
 } + {

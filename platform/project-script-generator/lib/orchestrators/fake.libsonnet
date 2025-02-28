@@ -16,7 +16,7 @@
     self.fake_script(setup, 'utils'),
   project_bootstrap(setup):
     self.fake_script(setup, 'bootstrap'),
-  project_configuration(setup):
+  project_show_configuration(setup):
     self.fake_script(setup, 'show configuration'),
   project_config(setup):
     self.fake_script(setup, 'base config file'),
