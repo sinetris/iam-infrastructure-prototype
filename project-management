@@ -302,6 +302,7 @@ if $provision; then
 fi
 if $restore_snapshots; then
   echo "${status_info}${bold_text}${highlight_text} - Starting project instances snapshot restore ... - ${reset_text}"
+  echo " ${status_warning}${highlight_text} The current instance state will be discarded. ${reset_text}"
   project_restore_snapshots
   echo "${status_success}${bold_text}${good_result_text} - Project instances snapshot restore done - ${reset_text}"
 fi
