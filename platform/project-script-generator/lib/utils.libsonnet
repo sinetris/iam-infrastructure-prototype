@@ -27,7 +27,7 @@
   verify_setup(setup):
     assert std.isObject(setup);
     assert std.objectHas(setup, 'ansible_inventory_path');
-    assert std.objectHas(setup, 'base_domain');
+    assert std.objectHas(setup, 'project_domain');
     assert std.objectHas(setup, 'dns_servers');
     assert std.objectHas(setup, 'host_architecture');
     assert std.objectHas(setup, 'network');

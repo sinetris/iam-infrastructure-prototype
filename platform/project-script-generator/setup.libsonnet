@@ -67,7 +67,7 @@ local add_default_machine_data(setup, instance) =
 {
   local setup = self,
   project_name: config.project_name,
-  project_domain: config.base_domain,
+  project_domain: config.project_domain,
   host_architecture: std.extVar('host_architecture'),
   orchestrator_name: std.extVar('orchestrator_name'),
   project_root_path: std.extVar('project_root_path'),
@@ -79,7 +79,6 @@ local add_default_machine_data(setup, instance) =
     if std.objectHas(config, 'ansible_inventory_path') then
       config.ansible_inventory_path
     else '.',
-  base_domain: config.base_domain,
   virtual_machines: [
     add_default_machine_data(setup, {
       hostname: 'ansible-controller',

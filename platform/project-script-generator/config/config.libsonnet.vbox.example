@@ -1,6 +1,6 @@
 {
   project_name: 'iam-demo',
-  base_domain: self.project_name + '.test',
+  project_domain: self.project_name + '.test',
   ansible_ssh_authorized_keys: [
     std.stripChars(importstr 'generated/assets/.ssh/id_ed25519.pub', '\n'),
   ],

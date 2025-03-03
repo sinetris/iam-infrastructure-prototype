@@ -3,7 +3,7 @@ local utils = import 'lib/utils.libsonnet';
 {
   user_data(setup, instance)::
     assert std.isObject(setup);
-    assert std.objectHas(setup, 'base_domain');
+    assert std.objectHas(setup, 'project_domain');
     assert std.isObject(instance);
     assert std.objectHas(instance, 'hostname');
     assert std.objectHas(instance, 'architecture');
@@ -120,9 +120,9 @@ local utils = import 'lib/utils.libsonnet';
 
     local manifest = {
       hostname: instance.hostname,
-      fqdn: '%(hostname)s.%(base_domain)s' % {
+      fqdn: '%(hostname)s.%(project_domain)s' % {
         hostname: instance.hostname,
-        base_domain: setup.base_domain,
+        project_domain: setup.project_domain,
       },
       prefer_fqdn_over_hostname: true,
       manage_etc_hosts: true,
