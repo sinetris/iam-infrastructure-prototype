@@ -265,13 +265,13 @@ if ! element_is_in_array "${generator_orchestrator}" "${valid_orchestrators[@]}"
   exit 1
 fi
 
-if $delete && ($bootstrap || $wrap_up || $provision); then
-  echo "${status_warning}${bad_result_text}${highlight_text} 'delete' shuldn't be used with 'bootstrap', 'wrap-up', 'provision', or 'restore-snapshots'. ${reset_text}"
+if $delete && $bootstrap && ! ($generate && $configure); then
+  echo "${status_error}${bad_result_text} Calling 'bootstrap' after 'delete' without calling first 'generate' and 'configure'.${reset_text}" >&2
+  exit 1
 fi
 
 if $delete; then
   instances_delete
-  exit 0
 fi
 
 if $generate; then
