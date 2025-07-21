@@ -45,13 +45,13 @@ repos:
   #     - id: shellcheck
   # Markdown/CommonMark Linter
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.43.0
+    rev: v0.45.0
     hooks:
       - id: markdownlint
         # Makefile Linter
   # Jsonnet Linter e Formatter
   - repo: https://github.com/google/go-jsonnet
-    rev: v0.20.0
+    rev: v0.21.0
     hooks:
       - id: jsonnet-format
       - id: jsonnet-lint
@@ -64,7 +64,7 @@ repos:
         pass_filenames: false
   # YAML Formatter
   - repo: https://github.com/google/yamlfmt
-    rev: v0.15.0
+    rev: v0.17.2
     hooks:
       # Generic
       - id: yamlfmt
@@ -90,7 +90,7 @@ repos:
         files: ^platform\/ansible\/.*\.ya?ml$
         exclude: ^platform\/ansible\/installed\/.*
   - repo: https://github.com/ansible/ansible-lint
-    rev: v25.1.0
+    rev: v25.6.1
     hooks:
       - id: ansible-lint
         args:
