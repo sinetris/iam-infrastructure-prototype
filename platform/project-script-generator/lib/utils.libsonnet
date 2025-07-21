@@ -69,9 +69,9 @@
           fi
         }
       |||,
-    join_array():
+    print_array():
       |||
-        join_array() {
+        print_array() {
           if [ $# -lt 3 ]; then
             echo "Usage: ${bold_text}$0 <separator> <array>${reset_text}" >&2
             exit 1
@@ -259,13 +259,13 @@
         set -Eeuo pipefail
         %(no_color)s
         %(check_dependency)s
-        %(join_array)s
+        %(print_array)s
         %(mac_address_functions)s
         %(element_is_in_array)s
       ||| % {
         no_color: bash.no_color(),
         check_dependency: bash.check_dependency(),
-        join_array: bash.join_array(),
+        print_array: bash.print_array(),
         mac_address_functions: bash.mac_address_functions(),
         element_is_in_array: bash.element_is_in_array(),
       },

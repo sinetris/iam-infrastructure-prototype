@@ -45,7 +45,7 @@ else
 fi
 
 
-join_array() {
+print_array() {
   if [[ $# -lt 3 ]]; then
     echo "Usage: ${bold_text}$0 <separator> <array>${reset_text}" >&2
     exit 1
@@ -60,8 +60,8 @@ join_array() {
   done
 }
 
-__list_valid_orchestrators=$(join_array ', ' "${valid_orchestrators[@]}")
-__list_valid_architectures=$(join_array ', ' "${valid_architectures[@]}")
+__list_valid_orchestrators=$(print_array ', ' "${valid_orchestrators[@]}")
+__list_valid_architectures=$(print_array ', ' "${valid_architectures[@]}")
 __usage=$(
 	cat <<-HELPMSG
 		${highlight_text}Usage:${reset_text} ${bold_text}$0 [OPTIONS]${reset_text}

@@ -358,6 +358,7 @@ section in [Kubernetes development tips](development/kubernetes.md).
     - [x] add `check_dependency` to `utils.libsonnet`
     - [x] add `generate_ansible_ssh_keys` to `utils.libsonnet`
     - [x] add `join_array` to `utils.libsonnet`
+      - [x] rename `join_array` to `print_array`
     - [x] add `element_is_in_array` to `utils.libsonnet`
   - [ ] `base_provisionings` for `ansible-controller` in `setup.jsonnet`
     - [ ] rename `machines_ips` to `instances_config`
