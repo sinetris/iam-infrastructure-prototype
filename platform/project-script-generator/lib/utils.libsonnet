@@ -215,6 +215,7 @@
           good_result_text=$(tput setaf 2)
           highlight_text=$(tput setaf 3)
           info_text=$(tput setaf 4)
+          separator_text=$(tput setaf 13)
           reset_text=$(tput sgr0)
           status_success=✅
           status_error=❌
@@ -234,6 +235,7 @@
           good_result_text=''
           highlight_text=''
           info_text=''
+          separator_text=''
           reset_text=''
           status_success='[SUCCESS]'
           status_error='[ERROR]'

@@ -61,6 +61,7 @@ local add_default_machine_data(setup, instance) =
           |||,
       },
     ],
+    network: config.network,
   } + instance;
 
 // Exported
@@ -74,6 +75,7 @@ local add_default_machine_data(setup, instance) =
   project_generator_path: self.project_root_path + '/platform/project-script-generator',
   projects_folder: '$HOME/.local/projects',
   project_basefolder: self.projects_folder + '/' + self.project_name,
+  os_distro: 'ubuntu',
   os_release_codename: 'noble',
   ansible_inventory_path:
     if std.objectHas(config, 'ansible_inventory_path') then

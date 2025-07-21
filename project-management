@@ -14,7 +14,7 @@ valid_architectures=( amd64 x86_64 arm64 aarch64 )
 valid_orchestrators=( fake multipass vbox )
 
 : "${NO_COLOR:=0}"
-if [[ -z ${NO_COLOR+notset} ]] || [ "${NO_COLOR}" == "0" ]; then
+if [[ -z ${NO_COLOR+notset} ]] || [[ "${NO_COLOR}" == "0" ]]; then
   bold_text=$(tput bold)
   bad_result_text=$(tput setaf 1)
   good_result_text=$(tput setaf 2)
@@ -46,7 +46,7 @@ fi
 
 
 join_array() {
-  if [ $# -lt 3 ]; then
+  if [[ $# -lt 3 ]]; then
     echo "Usage: ${bold_text}$0 <separator> <array>${reset_text}" >&2
     exit 1
   fi
@@ -54,12 +54,14 @@ join_array() {
   local first_item="$2"
   shift 2
   local other_items=("$@")
-  printf "'%s'" "$first_item"
+  printf "'%s'" "${first_item}"
   for item in "${other_items[@]}"; do
-    printf "%s'%s'" "$separator" "$item"
+    printf "%s'%s'" "${separator}" "${item}"
   done
 }
 
+__list_valid_orchestrators=$(join_array ', ' "${valid_orchestrators[@]}")
+__list_valid_architectures=$(join_array ', ' "${valid_architectures[@]}")
 __usage=$(
 	cat <<-HELPMSG
 		${highlight_text}Usage:${reset_text} ${bold_text}$0 [OPTIONS]${reset_text}
@@ -69,9 +71,9 @@ __usage=$(
 		${highlight_text}Options:${reset_text}
 		  -a, --all                   ${gray_text}Run all tasks to setup the project (in order: generate configure bootstrap wrap-up provision)${reset_text}
 		  -o, --orchestrator          ${gray_text}Select orchestrator for project scripts generator (default: '${generator_orchestrator}')${reset_text}
-		                                  ${gray_text}Valid orchestrators: ${bold_text}$(join_array ', ' "${valid_orchestrators[@]}")${reset_text}
+		                                  ${gray_text}Valid orchestrators: ${bold_text}${__list_valid_orchestrators}${reset_text}
 		  -m, --machine-architecture  ${gray_text}Host architecture (default: '${host_architecture}' using 'uname -m')${reset_text}
-		                                  ${gray_text}Valid architectures: ${bold_text}$(join_array ', ' "${valid_architectures[@]}")${reset_text}
+		                                  ${gray_text}Valid architectures: ${bold_text}${__list_valid_architectures}${reset_text}
 		  -g, --generate              ${gray_text}Generate project management scripts${reset_text}
 		  -c, --configure             ${gray_text}Generate project configuration${reset_text}
 		  -b, --bootstrap             ${gray_text}Bootstrap project network and instances${reset_text}
@@ -86,34 +88,34 @@ __usage=$(
 )
 
 element_is_in_array() {
-  if [ $# -lt 2 ]; then
+  if [[ $# -lt 2 ]]; then
     echo "Usage: ${bold_text}$0 <element> <array>${reset_text}" >&2
     exit 1
   fi
   local seeking="$1"
   shift
   local elements=("$@")
-  local found_code=0
-  local not_found_code=1
   for element in "${elements[@]}"; do
-    if [[ "$element" == "$seeking" ]]; then
-      return ${found_code}
+    if [[ "${element}" == "${seeking}" ]]; then
+      # Found
+      return 0
     fi
   done
-  return ${not_found_code}
+  # Not found
+  return 1
 }
 
 usage() {
-  echo -e "$__usage"
+  echo -e "${__usage}"
 }
 
-if [ $# -lt 1 ]; then
+if [[ $# -lt 1 ]]; then
   usage
   exit 1
 fi
 
 check_dependency() {
-  if ! [ -x "$(command -v "$1")" ]; then
+  if ! command -v "$1" ; then
     echo -e "${bad_result_text}Error: ${bold_text}$1${reset_text}${bad_result_text} is not installed.${reset_text}" >&2
     exit 1
   fi
@@ -121,7 +123,7 @@ check_dependency() {
 
 generate_ansible_ssh_keys() {
   ansible_ssh_key_file="${generated_project_relative_path:?}/assets/.ssh/id_ed25519"
-  if [ -f "${project_root_path:?}/${ansible_ssh_key_file:?}" ]; then
+  if [[ -f "${project_root_path:?}/${ansible_ssh_key_file:?}" ]]; then
     echo " ${status_info} Using existing SSH keys for ansible."
   else
     check_dependency 'ssh-keygen'
@@ -135,7 +137,7 @@ generate_ansible_ssh_keys() {
 generate_bootstrap_scripts() {
   check_dependency 'jsonnet'
   project_config_file="${project_generator_relative_path:?}/config/config.libsonnet"
-  if [ -f "${project_root_path:?}/${project_config_file:?}" ]; then
+  if [[ -f "${project_root_path:?}/${project_config_file:?}" ]]; then
     echo " ${status_info} Using existing project config '${bold_text}${project_config_file:?}${reset_text}'"
   else
     echo " ${status_info} Missing config.libsonnet"
@@ -145,7 +147,8 @@ generate_bootstrap_scripts() {
   fi
   echo " ${status_info} Using orchestrator: ${bold_text}${generator_orchestrator}${reset_text}"
   echo " ${status_info} Using host_architecture: ${bold_text}${host_architecture}${reset_text}"
-  jsonnet --create-output-dirs \
+  jsonnet --string \
+    --create-output-dirs \
     --multi "${generated_project_path}" \
     --ext-str project_root_path="${project_root_path}" \
     --ext-str orchestrator_name="${generator_orchestrator}" \
@@ -153,7 +156,7 @@ generate_bootstrap_scripts() {
     --jpath "${project_root_path}" \
     --jpath "${project_generator_path}" \
     --jpath "${project_generator_path}/config" \
-    --string "${project_generator_path}/project-files-generator.jsonnet"
+    "${project_generator_path}/project-files-generator.jsonnet"
   chmod u+x "${generated_project_path}"/*.sh
 }
 
@@ -194,7 +197,7 @@ provision=false
 wrap_up=false
 delete=false
 restore_snapshots=false
-while [ $# -gt 0 ] && [ "$1" != "" ]; do
+while [[ $# -gt 0 ]] && [[ "$1" != "" ]]; do
   case $1 in
     -a | --all)
       shift
@@ -255,52 +258,54 @@ while [ $# -gt 0 ] && [ "$1" != "" ]; do
   esac
 done
 
+# shellcheck disable=SC2310
 if ! element_is_in_array "${host_architecture}" "${valid_architectures[@]}"; then
   echo "${status_error} ${bad_result_text}Error: 'host_architecture' must be one of: ${bold_text}${valid_architectures[*]}${reset_text}" >&2
   exit 1
 fi
 
+# shellcheck disable=SC2310
 if ! element_is_in_array "${generator_orchestrator}" "${valid_orchestrators[@]}"; then
   echo "${status_error} ${bad_result_text}Error: 'orchestrator' must be one of: ${bold_text}${valid_orchestrators[*]}${reset_text}" >&2
   exit 1
 fi
 
-if $delete && $bootstrap && ! ($generate && $configure); then
+if ${delete} && ${bootstrap} && ! (${generate} && ${configure}); then
   echo "${status_error}${bad_result_text} Calling 'bootstrap' after 'delete' without calling first 'generate' and 'configure'.${reset_text}" >&2
   exit 1
 fi
 
-if $delete; then
+if ${delete}; then
   instances_delete
 fi
 
-if $generate; then
+if ${generate}; then
   echo "${status_info}${bold_text}${highlight_text} - Generating project management scripts ... - ${reset_text}"
   generate_ansible_ssh_keys
   generate_bootstrap_scripts
   echo "${status_success}${bold_text}${good_result_text} - Project management scripts generated - ${reset_text}"
 fi
-if $configure; then
+if ${configure}; then
   echo "${status_info}${bold_text}${highlight_text} - Preparing project configuration ... - ${reset_text}"
   project_configure
   echo "${status_success}${bold_text}${good_result_text} - Project configuration done - ${reset_text}"
 fi
-if $bootstrap; then
+if ${bootstrap}; then
   echo "${status_info}${bold_text}${highlight_text} - Starting project network and instances creation ... (might take some time ${status_waiting}) - ${reset_text}"
   project_bootstrap
   echo "${status_success}${bold_text}${good_result_text} - Project network and instances creation done - ${reset_text}"
 fi
-if $wrap_up; then
+if ${wrap_up}; then
   echo "${status_info}${bold_text}${highlight_text} - Running project wrap-up ... - ${reset_text}"
   instances_wrap_up
   echo "${status_success}${bold_text}${good_result_text} - Project wrap-up done - ${reset_text}"
 fi
-if $provision; then
+if ${provision}; then
   echo "${status_info}${bold_text}${highlight_text} - Starting project instances provisioning ... - ${reset_text}"
   project_provisioning
   echo "${status_success}${bold_text}${good_result_text} - Project instances provisioning done - ${reset_text}"
 fi
-if $restore_snapshots; then
+if ${restore_snapshots}; then
   echo "${status_info}${bold_text}${highlight_text} - Starting project instances snapshot restore ... - ${reset_text}"
   echo " ${status_warning}${highlight_text} The current instance state will be discarded. ${reset_text}"
   project_restore_snapshots
@@ -311,7 +316,7 @@ echo "${status_success}${bold_text}${highlight_text} - All done - ${reset_text}"
 echo
 echo " ${highlight_text}Project root path: ${bold_text}${project_root_path}${reset_text}"
 
-if $bootstrap || $wrap_up || $provision; then
+if ${bootstrap} || ${wrap_up} || ${provision}; then
   echo
   echo "${info_text}To ssh into an instance use ${bold_text}./instance-shell.sh <instance-name>${reset_text}${info_text} from the generated folder.${reset_text}"
   echo "  ${highlight_text}Example:${reset_text}"

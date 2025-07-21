@@ -1,0 +1,26 @@
+---
+network:
+  version: 2
+  ethernets:
+    ethnat:
+      dhcp4: true
+      dhcp6: false
+      dhcp-identifier: mac
+      set-name: ethnat
+      nameservers:
+        addresses:
+          - 8.8.8.8
+    ethlab:
+      dhcp4: true
+      dhcp4-overrides:
+        use-dns: false
+        use-domains: false
+        route-metric: 100
+      dhcp6: false
+      dhcp-identifier: mac
+      set-name: ethlab
+      nameservers:
+        search:
+          - "example.test"
+        addresses:
+          - 127.0.0.53

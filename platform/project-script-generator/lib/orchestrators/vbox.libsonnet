@@ -282,7 +282,7 @@ local instance_config(setup, instance) =
   assert std.objectHas(instance, 'basefolder');
   local instance_cpus = std.get(instance, 'cpus', '1');
   local instance_storage_space = std.get(instance, 'storage_space', '5000');
-  local instence_memory = std.get(instance, 'memory', '1024');
+  local instance_memory = std.get(instance, 'memory', '1024');
   local instance_vram = std.get(instance, 'vram', '64');
   local instance_username = std.get(instance, 'admin_username', 'admin');
   local instance_timeout = std.get(instance, 'timeout', '300');
@@ -316,7 +316,7 @@ local instance_config(setup, instance) =
     instance_timeout: instance_timeout,
     instance_check_sleep_time_seconds: instance_check_sleep_time_seconds,
     instance_check_ssh_retries: instance_check_ssh_retries,
-    instance_memory: instence_memory,
+    instance_memory: instance_memory,
     instance_vram: instance_vram,
   };
 
@@ -354,13 +354,13 @@ local create_instance(setup, instance) =
     echo "${status_start_first} -------------- begin creating '${instance_name:?}' -------------- ${status_start_last}"
     echo " ${status_action} Creating Instance '${instance_name:?}' ..."
     %(instance_config)s
-    vbox_os_mapping_file="${project_generator_path:?}/assets/vbox_os_mapping.json"
-    vbox_instance_ostype=$(jq -L "${project_generator_path:?}/lib/jq/modules" \
+    vbox_os_mapping_file="${generated_files_path:?}/assets/vbox_os_mapping.json"
+    vbox_instance_ostype=$(jq -L "${generated_files_path:?}/lib/jq/modules" \
       --arg architecture "${vbox_architecture:?}" \
       --arg os_release "${os_release_codename:?}" \
       --arg select_field "os_type" \
       --raw-output \
-      --from-file "${project_generator_path:?}/lib/jq/filrters/get_vbox_mapping_value.jq" \
+      --from-file "${generated_files_path:?}/lib/jq/filters/get_vbox_mapping_value.jq" \
       "${vbox_os_mapping_file:?}" 2>&1) && _exit_code=0 || _exit_code=$?
 
     if [[ $_exit_code -ne 0 ]]; then
@@ -369,12 +369,12 @@ local create_instance(setup, instance) =
       exit 2
     fi
 
-    os_release_file=$(jq -L "${project_generator_path:?}/lib/jq/modules" \
+    os_release_file=$(jq -L "${generated_files_path:?}/lib/jq/modules" \
       --arg architecture "${vbox_architecture:?}" \
       --arg os_release "${os_release_codename:?}" \
       --arg select_field "os_release_file" \
       --raw-output \
-      --from-file "${project_generator_path:?}/lib/jq/filrters/get_vbox_mapping_value.jq" \
+      --from-file "${generated_files_path:?}/lib/jq/filters/get_vbox_mapping_value.jq" \
       "${vbox_os_mapping_file:?}" 2>&1) && _exit_code=0 || _exit_code=$?
 
     if [[ $_exit_code -ne 0 ]]; then
