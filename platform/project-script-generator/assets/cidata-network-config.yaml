@@ -1,3 +1,4 @@
+---
 network:
   version: 2
   ethernets:
@@ -5,19 +6,21 @@ network:
       dhcp4: true
       dhcp6: false
       dhcp-identifier: mac
-      match:
-        macaddress: ${_mac_address_nat_cloud_init}
       set-name: ethnat
       nameservers:
-        addresses: [1.1.1.1]
+        addresses:
+          - 8.8.8.8
     ethlab:
       dhcp4: true
+      dhcp4-overrides:
+        use-dns: false
+        use-domains: false
+        route-metric: 100
       dhcp6: false
       dhcp-identifier: mac
-      match:
-        macaddress: ${_mac_address_lab_cloud_init}
       set-name: ethlab
       nameservers:
         search:
-          - '${_domain}'
-        addresses: [1.1.1.1]
+          - "example.test"
+        addresses:
+          - 127.0.0.53

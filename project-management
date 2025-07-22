@@ -13,8 +13,8 @@ generated_project_path="${project_root_path:?}/${generated_project_relative_path
 valid_architectures=( amd64 x86_64 arm64 aarch64 )
 valid_orchestrators=( fake multipass vbox )
 
-: ${NO_COLOR:=0}
-if [[ -z ${NO_COLOR+notset} ]] || [ "${NO_COLOR}" == "0" ]; then
+: "${NO_COLOR:=0}"
+if [[ -z ${NO_COLOR:+notset} ]] || [[ "${NO_COLOR}" == "0" ]]; then
   bold_text=$(tput bold)
   bad_result_text=$(tput setaf 1)
   good_result_text=$(tput setaf 2)
@@ -44,47 +44,152 @@ else
   status_action='[ACTION]'
 fi
 
+
+print_array() {
+  if [[ $# -lt 3 ]]; then
+    echo "Usage: ${bold_text}$0 <separator> <array>${reset_text}" >&2
+    exit 1
+  fi
+  local separator="$1"
+  local first_item="$2"
+  shift 2
+  local other_items=("$@")
+  printf "'%s'" "${first_item}"
+  for item in "${other_items[@]}"; do
+    printf "%s'%s'" "${separator}" "${item}"
+  done
+}
+
+__list_valid_orchestrators=$(print_array ', ' "${valid_orchestrators[@]}")
+__list_valid_architectures=$(print_array ', ' "${valid_architectures[@]}")
 __usage=$(
 	cat <<-HELPMSG
 		${highlight_text}Usage:${reset_text} ${bold_text}$0 [OPTIONS]${reset_text}
 
 		${highlight_text}${bold_text}Manage instances provisioning.${reset_text}
 
-		Options:
-		  -a, --all                   ${gray_text}Run all tasks to setup instances (in order: generate bootstrap wrap-up provision)${reset_text}
-		  -o, --orchestrator          ${gray_text}Select orchestrator for instances management scripts generator (default: '${generator_orchestrator}')${reset_text}
+		${highlight_text}Options:${reset_text}
+		  -a, --all                   ${gray_text}Run all tasks to setup the project (in order: generate configure bootstrap wrap-up provision)${reset_text}
+		  -o, --orchestrator          ${gray_text}Select orchestrator for project scripts generator (default: '${generator_orchestrator}')${reset_text}
+		                                  ${gray_text}Valid orchestrators: ${bold_text}${__list_valid_orchestrators}${reset_text}
 		  -m, --machine-architecture  ${gray_text}Host architecture (default: '${host_architecture}' using 'uname -m')${reset_text}
-		  -g, --generate              ${gray_text}Generate instances management scripts${reset_text}
-		  -b, --bootstrap             ${gray_text}Bootstrap project network and instances using generated scripts${reset_text}
-		  -w, --wrap-up               ${gray_text}Wrap-up project basic setup using generated scripts${reset_text}
-		  -p, --provision             ${gray_text}Provision instances using generated scripts${reset_text}
-		  -r, --restore-snapshots     ${gray_text}Restore instances base snapshot using generated scripts${reset_text}
-		  -d, --delete                ${gray_text}Delete instances and local project data using generated scripts${reset_text}
+		                                  ${gray_text}Valid architectures: ${bold_text}${__list_valid_architectures}${reset_text}
+		  -g, --generate              ${gray_text}Generate project management scripts${reset_text}
+		  -c, --configure             ${gray_text}Generate project configuration${reset_text}
+		  -b, --bootstrap             ${gray_text}Bootstrap project network and instances${reset_text}
+		  -w, --wrap-up               ${gray_text}Wrap-up project basic setup and create instances base snapshot${reset_text}
+		  -p, --provision             ${gray_text}Provision instances${reset_text}
+		  -r, --restore-snapshots     ${gray_text}Restore instances base snapshot${reset_text}
+		  -d, --delete                ${gray_text}Delete instances and local project data${reset_text}
 		  -h, --help                  ${gray_text}This help${reset_text}
-		Environment variables:
-		  NO_COLOR                    ${gray_text}suppress colorized output${reset_text}
+		${highlight_text}Environment variables:${reset_text}
+		  NO_COLOR                    ${gray_text}Suppress colorized output${reset_text}
 	HELPMSG
 )
 
-usage() {
-  echo -e "$__usage"
+element_is_in_array() {
+  if [[ $# -lt 2 ]]; then
+    echo "Usage: ${bold_text}$0 <element> <array>${reset_text}" >&2
+    exit 1
+  fi
+  local seeking="$1"
+  shift
+  local elements=("$@")
+  for element in "${elements[@]}"; do
+    if [[ "${element}" == "${seeking}" ]]; then
+      # Found
+      return 0
+    fi
+  done
+  # Not found
+  return 1
 }
 
-if [ $# -lt 1 ]; then
+usage() {
+  echo -e "${__usage}"
+}
+
+if [[ $# -lt 1 ]]; then
   usage
   exit 1
 fi
 
 check_dependency() {
-  if ! [ -x "$(command -v "$1")" ]; then
+  if ! command -v "$1" ; then
     echo -e "${bad_result_text}Error: ${bold_text}$1${reset_text}${bad_result_text} is not installed.${reset_text}" >&2
     exit 1
   fi
 }
 
+generate_admin_password_hash_file() {
+  instance_admin_password_path="${generated_project_path:?}/assets/passwords/admin"
+  # Password in plain text
+  instance_admin_password_file="${instance_admin_password_path:?}/plain"
+  if [[ -f "${instance_admin_password_file:?}" ]]; then
+    echo " ${status_info} Using existing admin password."
+  else
+    mkdir -p "$(dirname "${instance_admin_password_file:?}")"
+    # Use existing variable INSTANCE_ADMIN_PASSWORD or ask for a new password
+    if [[ -z ${INSTANCE_ADMIN_PASSWORD:+notset} ]]; then
+      _password_retry=5
+      _password_min_length=8
+      _password_ok=false
+
+      while [[ ${_password_retry} -ge 0 ]]; do
+        read -r -s -p "Choose instances admin password: " INSTANCE_ADMIN_PASSWORD
+        echo
+        if [[ ${#INSTANCE_ADMIN_PASSWORD} -lt ${_password_min_length} ]]; then
+          echo "Password too short! The minimum length is ${_password_min_length} characters."
+        else
+          read -r -s -p "Repeat instances admin password: " INSTANCE_ADMIN_PASSWORD_REPEAT
+          echo
+          if [[ "${INSTANCE_ADMIN_PASSWORD}" == "${INSTANCE_ADMIN_PASSWORD_REPEAT}" ]]; then
+            _password_ok=true
+            break
+          else
+            echo "You have entered different passwords."
+          fi
+        fi
+        echo "Please try again (attempts left: ${_password_retry})."
+        ((_password_retry--))
+      done
+      if ! ${_password_ok}; then
+        echo "No valid instances admin password has been entered (the program will exit)." >&2
+        exit 1
+      fi
+    fi
+    echo "${INSTANCE_ADMIN_PASSWORD:?}" > "${instance_admin_password_file}"
+  fi
+  # Password salt (used to create password hash)
+  instance_admin_password_salt_file="${instance_admin_password_path:?}/salt"
+  if [[ -f "${instance_admin_password_salt_file:?}" ]]; then
+    echo " ${status_info} Using existing admin password salt."
+  else
+    check_dependency 'openssl'
+    echo " ${status_action} Generating admin password salt file ..."
+    mkdir -p "$(dirname "${instance_admin_password_salt_file:?}")"
+    openssl rand -base64 8 > "${instance_admin_password_salt_file:?}"
+    echo " ${status_success} admin password salt generated."
+  fi
+  # Password hash
+  instance_admin_password_hash_file="${instance_admin_password_path:?}/hash"
+  if [[ -f "${instance_admin_password_hash_file:?}" ]]; then
+    echo " ${status_info} Using existing admin password hash."
+  else
+    check_dependency 'openssl'
+    echo " ${status_action} Generating admin password hash file ..."
+    mkdir -p "$(dirname "${instance_admin_password_hash_file:?}")"
+    _instance_admin_password=$(cat "${instance_admin_password_file:?}")
+    _instance_admin_password_salt=$(cat "${instance_admin_password_salt_file:?}")
+    openssl passwd -6 -salt "${_instance_admin_password_salt}" "${_instance_admin_password}" \
+      > "${instance_admin_password_hash_file:?}"
+    echo " ${status_success} admin password hash file generated."
+  fi
+}
+
 generate_ansible_ssh_keys() {
   ansible_ssh_key_file="${generated_project_relative_path:?}/assets/.ssh/id_ed25519"
-  if [ -f "${project_root_path:?}/${ansible_ssh_key_file:?}" ]; then
+  if [[ -f "${project_root_path:?}/${ansible_ssh_key_file:?}" ]]; then
     echo " ${status_info} Using existing SSH keys for ansible."
   else
     check_dependency 'ssh-keygen'
@@ -98,7 +203,7 @@ generate_ansible_ssh_keys() {
 generate_bootstrap_scripts() {
   check_dependency 'jsonnet'
   project_config_file="${project_generator_relative_path:?}/config/config.libsonnet"
-  if [ -f "${project_root_path:?}/${project_config_file:?}" ]; then
+  if [[ -f "${project_root_path:?}/${project_config_file:?}" ]]; then
     echo " ${status_info} Using existing project config '${bold_text}${project_config_file:?}${reset_text}'"
   else
     echo " ${status_info} Missing config.libsonnet"
@@ -108,7 +213,8 @@ generate_bootstrap_scripts() {
   fi
   echo " ${status_info} Using orchestrator: ${bold_text}${generator_orchestrator}${reset_text}"
   echo " ${status_info} Using host_architecture: ${bold_text}${host_architecture}${reset_text}"
-  jsonnet --create-output-dirs \
+  jsonnet --string \
+    --create-output-dirs \
     --multi "${generated_project_path}" \
     --ext-str project_root_path="${project_root_path}" \
     --ext-str orchestrator_name="${generator_orchestrator}" \
@@ -116,8 +222,13 @@ generate_bootstrap_scripts() {
     --jpath "${project_root_path}" \
     --jpath "${project_generator_path}" \
     --jpath "${project_generator_path}/config" \
-    --string "${project_generator_path}/project-files-generator.jsonnet"
+    "${project_generator_path}/project-files-generator.jsonnet"
   chmod u+x "${generated_project_path}"/*.sh
+}
+
+project_configure() {
+  cd "${generated_project_path}"
+  ./project-prepare-config.sh
 }
 
 project_bootstrap() {
@@ -145,34 +256,40 @@ instances_delete() {
   ./project-delete.sh
 }
 
+configure=false
 bootstrap=false
 generate=false
 provision=false
 wrap_up=false
 delete=false
 restore_snapshots=false
-while [ $# -gt 0 ] && [ "$1" != "" ]; do
+while [[ $# -gt 0 ]] && [[ "$1" != "" ]]; do
   case $1 in
     -a | --all)
       shift
       generate=true
+      configure=true
       bootstrap=true
       wrap_up=true
       provision=true
       ;;
     -o | --orchestrator)
-      generator_orchestrator=( "${2?Missing argument for  -o | --orchestrator}" ) ;
+      generator_orchestrator="${2?Missing argument for  -o | --orchestrator}"
       shift
       shift
       ;;
     -m | --machine-architecture)
-      host_architecture=( "${2?Missing argument for  -m | --machine-architecture}" ) ;
+      host_architecture="${2?Missing argument for  -m | --machine-architecture}"
       shift
       shift
       ;;
     -g | --generate)
       shift
       generate=true
+      ;;
+    -c | --configure)
+      shift
+      configure=true
       ;;
     -b | --bootstrap)
       shift
@@ -207,56 +324,69 @@ while [ $# -gt 0 ] && [ "$1" != "" ]; do
   esac
 done
 
-if [[ ! " ${valid_architectures[*]} " =~ " ${host_architecture} " ]]; then
-  printf "${bad_result_text}Error: 'host_architecture' must be one of: ${bold_text}${valid_architectures[*]}${reset_text}\n" >&2
+# shellcheck disable=SC2310
+if ! element_is_in_array "${host_architecture}" "${valid_architectures[@]}"; then
+  echo "${status_error} ${bad_result_text}Error: 'host_architecture' must be one of: ${bold_text}${valid_architectures[*]}${reset_text}" >&2
   exit 1
 fi
 
-if [[ ! " ${valid_orchestrators[*]} " =~ " ${generator_orchestrator} " ]]; then
-  printf "${bad_result_text}Error: 'orchestrator' must be one of: ${bold_text}${valid_orchestrators[*]}${reset_text}\n" >&2
+# shellcheck disable=SC2310
+if ! element_is_in_array "${generator_orchestrator}" "${valid_orchestrators[@]}"; then
+  echo "${status_error} ${bad_result_text}Error: 'orchestrator' must be one of: ${bold_text}${valid_orchestrators[*]}${reset_text}" >&2
   exit 1
 fi
 
-if $delete; then
+if ${delete} && ${bootstrap} && ! (${generate} && ${configure}); then
+  echo "${status_error}${bad_result_text} Calling 'bootstrap' after 'delete' without calling first 'generate' and 'configure'.${reset_text}" >&2
+  exit 1
+fi
+
+if ${delete}; then
   instances_delete
-  exit 0
 fi
 
-if $generate; then
-  echo "${status_info}${bold_text}${highlight_text} - Creating instances setup scripts ... - ${reset_text}"
+if ${generate}; then
+  echo "${status_info}${bold_text}${highlight_text} - Generating project management scripts ... - ${reset_text}"
+  generate_admin_password_hash_file
   generate_ansible_ssh_keys
   generate_bootstrap_scripts
-  echo "${status_success}${bold_text}${highlight_text} - Instances setup scripts generated - ${reset_text}"
+  echo "${status_success}${bold_text}${good_result_text} - Project management scripts generated - ${reset_text}"
 fi
-if $bootstrap; then
-  echo "${status_info}${bold_text}${highlight_text} - Starting project network and instances creation ... - ${reset_text}"
+if ${configure}; then
+  echo "${status_info}${bold_text}${highlight_text} - Preparing project configuration ... - ${reset_text}"
+  project_configure
+  echo "${status_success}${bold_text}${good_result_text} - Project configuration done - ${reset_text}"
+fi
+if ${bootstrap}; then
+  echo "${status_info}${bold_text}${highlight_text} - Starting project network and instances creation ... (might take some time ${status_waiting}) - ${reset_text}"
   project_bootstrap
-  echo "${status_success}${bold_text}${highlight_text} - Project network and instances creation done - ${reset_text}"
+  echo "${status_success}${bold_text}${good_result_text} - Project network and instances creation done - ${reset_text}"
 fi
-if $wrap_up; then
+if ${wrap_up}; then
   echo "${status_info}${bold_text}${highlight_text} - Running project wrap-up ... - ${reset_text}"
   instances_wrap_up
-  echo "${status_success}${bold_text}${highlight_text} - Project wrap-up done - ${reset_text}"
+  echo "${status_success}${bold_text}${good_result_text} - Project wrap-up done - ${reset_text}"
 fi
-if $provision; then
+if ${provision}; then
   echo "${status_info}${bold_text}${highlight_text} - Starting project instances provisioning ... - ${reset_text}"
   project_provisioning
-  echo "${status_success}${bold_text}${highlight_text} - Project instances provisioning done - ${reset_text}"
+  echo "${status_success}${bold_text}${good_result_text} - Project instances provisioning done - ${reset_text}"
 fi
-if $restore_snapshots; then
+if ${restore_snapshots}; then
   echo "${status_info}${bold_text}${highlight_text} - Starting project instances snapshot restore ... - ${reset_text}"
+  echo " ${status_warning}${highlight_text} The current instance state will be discarded. ${reset_text}"
   project_restore_snapshots
-  echo "${status_success}${bold_text}${highlight_text} - Project instances snapshot restore done - ${reset_text}"
+  echo "${status_success}${bold_text}${good_result_text} - Project instances snapshot restore done - ${reset_text}"
 fi
 
 echo "${status_success}${bold_text}${highlight_text} - All done - ${reset_text}"
 echo
 echo " ${highlight_text}Project root path: ${bold_text}${project_root_path}${reset_text}"
 
-if $bootstrap || $wrap_up || $provision; then
+if ${bootstrap} || ${wrap_up} || ${provision}; then
   echo
-  echo "${highlight_text}To ssh into an instance use ${bold_text}./instance-shell.sh <instance-name>${reset_text} from the generated folder."
-  echo "  ${bold_text}Example:${reset_text}"
+  echo "${info_text}To ssh into an instance use ${bold_text}./instance-shell.sh <instance-name>${reset_text}${info_text} from the generated folder.${reset_text}"
+  echo "  ${highlight_text}Example:${reset_text}"
   echo "  ${bold_text}cd ${generated_project_path}${reset_text}"
   echo "  ${bold_text}./instance-shell.sh ansible-controller${reset_text}"
 fi

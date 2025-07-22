@@ -173,8 +173,34 @@ This project will create and provision 3 instances:
 
 #### Run
 
+To execute all required steps, you can run:
+
 ```sh
 ./project-management -a
+```
+
+The script will prompt for a password (and confirmation) to be used for the
+instances administrator user.
+
+To avoid being prompted for the password, you can create the file
+`generated/assets/passwords/admin/plain` or set the environment variable
+`INSTANCE_ADMIN_PASSWORD`.
+
+```sh
+INSTANCE_ADMIN_PASSWORD=changeme ./project-management -a
+```
+
+The `-a` (or `--all`) option will perform all required steps sequentially and
+is equivalent to running `./project-management -g -c -b -w -p`.
+
+If you want more control, you can perform the steps one at a time:
+
+```sh
+./project-management --generate
+./project-management --configure
+./project-management --bootstrap
+./project-management --wrap-up
+./project-management --provision
 ```
 
 ### 💻 Linux desktop Instance

@@ -57,12 +57,18 @@ multipass start linux-desktop
 Generate admin password and ansible ssh keys:
 
 ```sh
-# Create a directory for the generated files
-mkdir -p generated/assets/.ssh
-# Create password hash
-instance_admin_password=ubuntu
-openssl passwd -6 -salt $(openssl rand -base64 8) "${instance_admin_password}" > generated/assets/admin_password
+# Create a directory for the generated password files
+_instance_admin_password_path="generated/assets/passwords/admin"
+mkdir -p "${_instance_admin_password_path:?}"
+# Create password
+INSTANCE_ADMIN_PASSWORD=changeme
+echo "${INSTANCE_ADMIN_PASSWORD:?}" > "${_instance_admin_password_path:?}/plain"
+openssl rand -base64 8 > "${_instance_admin_password_path:?}/salt"
+_instance_admin_password_salt=$(cat "${_instance_admin_password_path:?}/salt")
+openssl passwd -6 -salt "${_instance_admin_password_path:?}" "${INSTANCE_ADMIN_PASSWORD}" \
+  > "${_instance_admin_password_path:?}/hash"
 # Generate SSH keys for ansible
+mkdir -p generated/assets/.ssh
 ssh-keygen -t ed25519 -C "automator@iam-demo.test" -f generated/assets/.ssh/id_ed25519 -q -N ""
 ```
 
@@ -74,35 +80,47 @@ project_root_path="$(cd ../../ && pwd)"
 # Set the project generator path
 project_generator_path="$(pwd)"
 # Set the path for the generated files
-generated_files_path="${project_root_path:?}/generated"
+generated_project_path="${project_root_path:?}/generated"
 # Set the Orchestrator to be used in the Instances Generator script
 generator_orchestrator=multipass
 # Use 'arm64' for Apple silicon processors or 'amd64' for Intel and AMD 64bit CPUs
-host_architecture=arm64
+host_architecture=$(uname -m)
 cp config/config.libsonnet.${generator_orchestrator}.example config/config.libsonnet
-jsonnet --create-output-dirs \
-  --multi "${generated_files_path}" \
-  --ext-str project_root_path="${project_root_path}" \
-  --ext-str orchestrator_name="${generator_orchestrator}" \
-  --ext-str host_architecture="${host_architecture}" \
+jsonnet --string \
+  --create-output-dirs \
+  --multi "${generated_project_path:?}" \
+  --ext-str project_root_path="${project_root_path:?}" \
+  --ext-str orchestrator_name="${generator_orchestrator:?}" \
+  --ext-str host_architecture="${host_architecture:?}" \
   --jpath "${project_root_path}" \
-  --jpath "${project_generator_path}" \
+  --jpath "${project_generator_path:?}" \
   --jpath "${project_generator_path}/config" \
-  --string "${project_generator_path}/project-files-generator.jsonnet"
-chmod u+x "${generated_files_path}"/*.sh
+  "${project_generator_path}/project-files-generator.jsonnet"
+chmod u+x "${generated_project_path}"/*.sh
 ```
 
 ## Manage instances
 
+Instances management scripts are located in the directory `generated`.
+
 ```sh
 cd generated
-chmod u+x *.sh
+```
+
+Create and provision the instances:
+
+```sh
+# Generate project configuration
+./project-prepare-config.sh
 # Create project network and instances
 ./project-bootstrap.sh
 # Wrap-up basic project setup
 ./project-wrap-up.sh
 # Automated provisioning
 ./project-provisioning.sh
+```
+
+```sh
 # Get all instances status
 ./instances-status.sh
 # Get status for a specific instance

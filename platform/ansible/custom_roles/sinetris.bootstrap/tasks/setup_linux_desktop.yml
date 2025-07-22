@@ -3,14 +3,24 @@
   ansible.builtin.apt:
     name: apt-transport-https
     state: present
-- name: Add Microsoft Signing Certificate
+- name: Download Microsoft Signing Certificate
   ansible.builtin.get_url:
     url: https://packages.microsoft.com/keys/microsoft.asc
     dest: "{{ apt_keyring_path }}/microsoft.asc"
     mode: u=rx,go=r
+- name: Dearmor Microsoft Signing Certificate
+  become: true
+  ansible.builtin.command:
+    argv:
+      - gpg
+      - --output
+      - "{{ apt_keyring_share_path }}/microsoft.gpg"
+      - --dearmor
+      - "{{ apt_keyring_path }}/microsoft.asc"
+    creates: "{{ apt_keyring_share_path }}/microsoft.gpg"
 - name: Add the VS Code Repository
   ansible.builtin.apt_repository:
-    repo: "deb [arch=amd64,arm64,armhf signed-by={{ apt_keyring_path }}/microsoft.asc] https://packages.microsoft.com/repos/code stable main"
+    repo: "deb [arch=amd64,arm64,armhf signed-by={{ apt_keyring_share_path }}/microsoft.gpg] https://packages.microsoft.com/repos/code stable main"
     filename: vscode
     mode: u=rw,g=r,o=r
     update_cache: true

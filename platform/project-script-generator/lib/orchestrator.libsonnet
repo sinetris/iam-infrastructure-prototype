@@ -1,5 +1,5 @@
 {
-  get(orchestrator)::
+  get(orchestrator):
     // jsonnet doesn't allow dynamic import paths
     local orchestrator_implementation =
       if orchestrator == 'fake' then

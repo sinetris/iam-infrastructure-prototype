@@ -1,0 +1,10 @@
+with(
+  .network.ethernets[env(nic_nat_name)];
+  .match.macaddress = strenv(mac_address_nat),
+  .nameservers.addresses[] = strenv(dns_servers)
+),
+with(
+  .network.ethernets[env(nic_lab_name)];
+  .match.macaddress = strenv(mac_address_lab),
+  .nameservers.search[] = strenv(project_domain)
+)

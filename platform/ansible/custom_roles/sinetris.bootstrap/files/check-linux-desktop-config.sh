@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-base_domain=iam-demo.test
+project_domain=iam-demo.test
 check_hostnames_on_port=(
   'Kubernetes-Control-Plane iam-control-plane 6443'
   'Forgejo git 443'
@@ -28,11 +28,11 @@ good_result_text=$(tput setaf 2)
 highlight_text=$(tput setaf 3)
 info_text=$(tput setaf 4)
 reset_text=$(tput sgr0)
-echo "Check DNS entries and Certificates for ${bold_text}${highlight_text}${base_domain}${reset_text}"
+echo "Check DNS entries and Certificates for ${bold_text}${highlight_text}${project_domain}${reset_text}"
 for name_hostname_port in "${check_hostnames_on_port[@]}"; do
   tmp_splitted_line=($name_hostname_port)
   service_name=${tmp_splitted_line[0]}
-  fqdn_to_check=${tmp_splitted_line[1]}.${base_domain}
+  fqdn_to_check=${tmp_splitted_line[1]}.${project_domain}
   port_to_check=${tmp_splitted_line[2]}
 
   echo "Check ${info_text}${service_name}${reset_text} DNS resolution"

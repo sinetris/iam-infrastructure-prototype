@@ -185,6 +185,8 @@ in some cases not the best tools for the job) to cover certain topics.
   - [x] test generated CA certificates for installed applications domains from
         the `linux-desktop` instance
 - [x] setup [pre-commit][pre-commit] for this project repository
+  - [x] add `shellcheck` in `.pre-commit-config.yaml` (only for `project-management`)
+    - [ ] include more scripts in `shellcheck`
 - [ ] configure [Loki][grafana-loki], [Prometheus][prometheus],
       [Grafana][grafana], [Tempo][grafana-tempo]
   - [x] ~~install [Grafana Agent Flow][grafana-agent-flow]~~ (DEPRECATED)
@@ -248,7 +250,7 @@ section in [Kubernetes development tips](development/kubernetes.md).
 ### Project and instances management
 
 - [x] rename `bunch-up` to `project-management`
-- [ ] change `&& _exit_code=$? || _exit_code=$?` to `&& _exit_code=0 || _exit_code=$?`
+- [x] change `&& _exit_code=$? || _exit_code=$?` to `&& _exit_code=0 || _exit_code=$?`
 - [ ] change `instances-script-generator`
   - [x] move generated scripts default path to project root
   - [x] rename folder to `project-script-generator`
@@ -256,8 +258,12 @@ section in [Kubernetes development tips](development/kubernetes.md).
   - [x] rename `cloud-init-<instance_name>.yaml` to `cidata-<instance_name>-user-data.yaml`
   - [x] use `setup` instead of `config` where appropriate
   - [x] generate `include/utils.sh`
-  - [ ] generate and include project config in scripts
-  - [ ] add script to show project generator config (`project-generator-config.sh`)
+  - [x] change path from `include/utils.sh` to `lib/utils.sh`
+  - [x] generate and include project config in scripts (create file `lib/project_config.sh`)
+  - [x] add `project_configuration` (create file `project-configuration.sh`)
+  - [x] rename `project_configuration` to `project_show_configuration` (create
+        file `project-show-configuration.sh`)
+    - [ ] `project_show_configuration` shows generated project configuration
   - [ ] change `project_delete` (was `virtualmachines_destroy`)
     - [x] rename `virtualmachines_destroy` to `project_delete`
     - [x] rename `instances-destroy.sh` to `project-delete.sh`
@@ -270,7 +276,7 @@ section in [Kubernetes development tips](development/kubernetes.md).
   - [x] add `project_snapshot_restore` (create file `project-restore-snapshots.sh`)
   - [x] rename `virtualmachines_bootstrap` to `project_bootstrap` (create file `project-bootstrap.sh`)
   - [ ] split `project_bootstrap`
-    - [ ] `project_prepare_config` (create file `project-prepare-config.sh`)
+    - [x] `project_prepare_config` (create file `project-prepare-config.sh`)
       - [ ] generate configuration files in `project_basefolder`
     - [ ] `project_bootstrap`
       - [ ] create networks and instances based on config files from `project_basefolder`
@@ -281,8 +287,8 @@ section in [Kubernetes development tips](development/kubernetes.md).
   - [ ] change `instance_info` to show static instance info
   - [x] rename `virtualmachines_list` to `instances_status`
   - [x] rename `virtualmachine_shell` to `instance_shell`
-  - [ ] remove `envsubst` dependency
-  - [ ] use `yq` for cloud-init `user-data`
+  - [ ] use `yq` and remove `envsubst` dependency
+    - [ ] use `yq` for `cidata-network-config.yaml`
     - [ ] add ssh public key to user in cloud-init using `yq`
 
         ```sh
@@ -293,6 +299,7 @@ section in [Kubernetes development tips](development/kubernetes.md).
           cidata-${instance_name:?}-user-data.yaml
         ```
 
+  - [ ] copy `jq/modules` and `jq/filters` to `generated/lib` folder
   - [ ] standardize scripts output
   - [ ] modify `provisionings` to accept templating
   - [ ] add optional `description` field to `provisionings`
@@ -341,9 +348,18 @@ section in [Kubernetes development tips](development/kubernetes.md).
   - [x] move generic functions to `utils.libsonnet`
   - [ ] Generic changes to `orchestrators`
     - [ ] add `ansible_user` to `instances_catalog_file` for each instance
-    - [ ] move `ssh_exec` to `utils.libsonnet`
-    - [ ] move `scp_file` to `utils.libsonnet`
+    - [x] move `ssh_exec` to `utils.libsonnet`
+    - [x] move `scp_file` to `utils.libsonnet`
+    - [x] move `ssh_check_retry` to `utils.libsonnet`
+    - [x] move `NO_COLOR` code to `utils.libsonnet`
+    - [x] move `bash_mac_address_functions` to `utils.libsonnet`
+    - [ ] move `generic_project_config` code to `utils.libsonnet`
     - [ ] move `project_utils` to `utils.libsonnet`
+    - [x] add `check_dependency` to `utils.libsonnet`
+    - [x] add `generate_ansible_ssh_keys` to `utils.libsonnet`
+    - [x] add `join_array` to `utils.libsonnet`
+      - [x] rename `join_array` to `print_array`
+    - [x] add `element_is_in_array` to `utils.libsonnet`
   - [ ] `base_provisionings` for `ansible-controller` in `setup.jsonnet`
     - [ ] rename `machines_ips` to `instances_config`
     - [ ] add `ansible_controller_user` to `inventory/group_vars/all`
@@ -402,7 +418,7 @@ section in [Kubernetes development tips](development/kubernetes.md).
 - [x] set default `options` as `-q -o ServerAliveInterval=300 -o ServerAliveCountMax=3`
       in `ssh_exec`
 - [ ] add all network interfaces in instances catalog json file
-- [ ] create instances snapshots
+- [x] create instances snapshots
 - [ ] use previous MAC addressses, if presents
 - [ ] use `os_images_path` from config
 - [ ] use `os_images_url` from config

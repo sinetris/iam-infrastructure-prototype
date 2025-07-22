@@ -37,12 +37,26 @@ repos:
       - id: check-json
       - id: pretty-format-json
         args: ["--autofix", "--no-sort-keys"]
-  # - repo: https://github.com/jumanjihouse/pre-commit-hooks
-  #   rev: 3.0.0
-  #   hooks:
-  #     - id: shfmt
-  #       args: ["-l", "-i", "2", "-ci", "-sr", "-w"]
-  #     - id: shellcheck
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        args:
+          - -P
+          - SCRIPTDIR
+          - -e
+          - SC2034
+          - -x
+        files: |
+          (?x)^(
+              project-management
+          )$
+        # # Include and fix more files
+        # files: |
+        #   (?x)^(
+        #       kubernetes\/.*|
+        #       platform\/ansible\/.*
+        #   )$
   # Markdown/CommonMark Linter
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.45.0
@@ -81,13 +95,15 @@ repos:
         name: YAML format for kubernetes files
         alias: yamlfmt-k8s
         args: [-conf, kubernetes/.yamlfmt]
-        files: ^kubernetes\/.*\.ya?ml$
+        files: ^kubernetes\/
+        types: [file, yaml]
       # Ansible
       - id: yamlfmt
         name: YAML format for ansible files
         alias: yamlfmt-ansible
         args: [-conf, platform/ansible/.yamlfmt]
-        files: ^platform\/ansible\/.*\.ya?ml$
+        files: ^platform\/ansible\/
+        types: [file, yaml]
         exclude: ^platform\/ansible\/installed\/.*
   - repo: https://github.com/ansible/ansible-lint
     rev: v25.6.1

@@ -3,7 +3,7 @@ local utils = import 'lib/utils.libsonnet';
 {
   user_data(setup, instance)::
     assert std.isObject(setup);
-    assert std.objectHas(setup, 'base_domain');
+    assert std.objectHas(setup, 'project_domain');
     assert std.isObject(instance);
     assert std.objectHas(instance, 'hostname');
     assert std.objectHas(instance, 'architecture');
@@ -57,9 +57,11 @@ local utils = import 'lib/utils.libsonnet';
           )
         ),
         [if is_admin then 'sudo']: 'ALL=(ALL) NOPASSWD:ALL',
-        [if std.objectHas(user, 'password') then 'passwd']: user.password,
-        [if std.objectHas(user, 'plain_text_passwd') then 'plain_text_passwd']: user.plain_text_passwd,
-        lock_passwd: if std.objectHas(user, 'password') ||
+        [if std.objectHas(user, 'hashed_passwd') then 'hashed_passwd']: user.hashed_passwd,
+        [if std.objectHas(user, 'plain_text_passwd')
+            && !std.objectHas(user, 'hashed_passwd')
+        then 'plain_text_passwd']: user.plain_text_passwd,
+        lock_passwd: if std.objectHas(user, 'hashed_passwd') ||
                         std.objectHas(user, 'plain_text_passwd') then false else true,
         [if std.objectHas(user, 'ssh_import_id')
             && std.isArray(user.ssh_import_id) then 'ssh_import_id']:
@@ -120,9 +122,9 @@ local utils = import 'lib/utils.libsonnet';
 
     local manifest = {
       hostname: instance.hostname,
-      fqdn: '%(hostname)s.%(base_domain)s' % {
+      fqdn: '%(hostname)s.%(project_domain)s' % {
         hostname: instance.hostname,
-        base_domain: setup.base_domain,
+        project_domain: setup.project_domain,
       },
       prefer_fqdn_over_hostname: true,
       manage_etc_hosts: true,

@@ -13,8 +13,8 @@ local admin_user =
   {
     username: config.admin_username,
     is_admin: true,
-    [if std.objectHas(config, 'admin_passwd') then 'passwd']: config.admin_passwd,
-    [if std.objectHas(config, 'admin_plain_text_passwd') then 'plain_text_passwd']: config.admin_plain_text_passwd,
+    [if std.objectHas(config, 'admin_passwd_hash') then 'hashed_passwd']: config.admin_passwd_hash,
+    [if std.objectHas(config, 'admin_passwd_plain') then 'plain_text_passwd']: config.admin_passwd_plain,
     [if use_ssh_authorized_keys then 'ssh_authorized_keys']:
       config.admin_ssh_authorized_keys,
     [if use_ssh_import_id then 'ssh_import_id']:
@@ -44,6 +44,7 @@ local add_default_machine_data(setup, instance) =
     timeout: 15 * 60,
     storage_space: '10240',
     admin_username: config.admin_username,
+    [if std.objectHas(config, 'admin_passwd_plain') then 'admin_passwd_plain']: config.admin_passwd_plain,
     users: [admin_user],
     mounts: [
       {
@@ -61,25 +62,26 @@ local add_default_machine_data(setup, instance) =
           |||,
       },
     ],
+    network: config.network,
   } + instance;
 
 // Exported
 {
   local setup = self,
   project_name: config.project_name,
-  project_domain: config.base_domain,
+  project_domain: config.project_domain,
   host_architecture: std.extVar('host_architecture'),
   orchestrator_name: std.extVar('orchestrator_name'),
   project_root_path: std.extVar('project_root_path'),
   project_generator_path: self.project_root_path + '/platform/project-script-generator',
-  projects_folder: '$HOME/.local/projects',
+  projects_folder: '${HOME}/.local/projects',
   project_basefolder: self.projects_folder + '/' + self.project_name,
+  os_distro: 'ubuntu',
   os_release_codename: 'noble',
   ansible_inventory_path:
     if std.objectHas(config, 'ansible_inventory_path') then
       config.ansible_inventory_path
     else '.',
-  base_domain: config.base_domain,
   virtual_machines: [
     add_default_machine_data(setup, {
       hostname: 'ansible-controller',
@@ -131,7 +133,7 @@ local add_default_machine_data(setup, instance) =
           script:
             |||
               set -Eeuo pipefail
-              source $HOME/.profile
+              source "${HOME}/.profile"
               echo '# Generated file' > inventory/machines_ips
               cat inventory/machines_config.json \
                 | jq '.list | {all: {hosts: with_entries({key: .key, value: .value | with_entries(.key |= if . == "ipv4" then "ansible_host" else . end) })}}' \
@@ -176,7 +178,7 @@ local add_default_machine_data(setup, instance) =
       script:
         |||
           set -Eeuo pipefail
-          source $HOME/.profile
+          source "${HOME}/.profile"
           ansible-playbook playbooks/bootstrap-ansible-controller
           ansible-playbook playbooks/bootstrap-bind
           ansible-playbook playbooks/basic-bootstrap
@@ -200,7 +202,7 @@ local add_default_machine_data(setup, instance) =
       script:
         |||
           set -Eeuo pipefail
-          source $HOME/.profile
+          source "${HOME}/.profile"
           ansible-playbook playbooks/all-setup
         |||,
     },
