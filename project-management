@@ -14,7 +14,7 @@ valid_architectures=( amd64 x86_64 arm64 aarch64 )
 valid_orchestrators=( fake multipass vbox )
 
 : "${NO_COLOR:=0}"
-if [[ -z ${NO_COLOR+notset} ]] || [[ "${NO_COLOR}" == "0" ]]; then
+if [[ -z ${NO_COLOR:+notset} ]] || [[ "${NO_COLOR}" == "0" ]]; then
   bold_text=$(tput bold)
   bad_result_text=$(tput setaf 1)
   good_result_text=$(tput setaf 2)
@@ -118,6 +118,72 @@ check_dependency() {
   if ! command -v "$1" ; then
     echo -e "${bad_result_text}Error: ${bold_text}$1${reset_text}${bad_result_text} is not installed.${reset_text}" >&2
     exit 1
+  fi
+}
+
+generate_admin_password_hash_file() {
+  instance_admin_password_path="${generated_project_path:?}/assets/passwords/admin"
+  # Password in plain text
+  instance_admin_password_file="${instance_admin_password_path:?}/plain"
+  if [[ -f "${instance_admin_password_file:?}" ]]; then
+    echo " ${status_info} Using existing admin password."
+  else
+    mkdir -p "$(dirname "${instance_admin_password_file:?}")"
+    # Use existing variable INSTANCE_ADMIN_PASSWORD or ask for a new password
+    if [[ -z ${INSTANCE_ADMIN_PASSWORD:+notset} ]]; then
+      _password_retry=5
+      _password_min_length=8
+      _password_ok=false
+
+      while [[ ${_password_retry} -ge 0 ]]; do
+        read -r -s -p "Choose instances admin password: " INSTANCE_ADMIN_PASSWORD
+        echo
+        if [[ ${#INSTANCE_ADMIN_PASSWORD} -lt ${_password_min_length} ]]; then
+          echo "Password too short! The minimum length is ${_password_min_length} characters."
+        else
+          read -r -s -p "Repeat instances admin password: " INSTANCE_ADMIN_PASSWORD_REPEAT
+          echo
+          if [[ "${INSTANCE_ADMIN_PASSWORD}" == "${INSTANCE_ADMIN_PASSWORD_REPEAT}" ]]; then
+            _password_ok=true
+            break
+          else
+            echo "You have entered different passwords."
+          fi
+        fi
+        echo "Please try again (attempts left: ${_password_retry})."
+        ((_password_retry--))
+      done
+      if ! ${_password_ok}; then
+        echo "No valid instances admin password has been entered (the program will exit)." >&2
+        exit 1
+      fi
+    fi
+    echo "${INSTANCE_ADMIN_PASSWORD:?}" > "${instance_admin_password_file}"
+  fi
+  # Password salt (used to create password hash)
+  instance_admin_password_salt_file="${instance_admin_password_path:?}/salt"
+  if [[ -f "${instance_admin_password_salt_file:?}" ]]; then
+    echo " ${status_info} Using existing admin password salt."
+  else
+    check_dependency 'openssl'
+    echo " ${status_action} Generating admin password salt file ..."
+    mkdir -p "$(dirname "${instance_admin_password_salt_file:?}")"
+    openssl rand -base64 8 > "${instance_admin_password_salt_file:?}"
+    echo " ${status_success} admin password salt generated."
+  fi
+  # Password hash
+  instance_admin_password_hash_file="${instance_admin_password_path:?}/hash"
+  if [[ -f "${instance_admin_password_hash_file:?}" ]]; then
+    echo " ${status_info} Using existing admin password hash."
+  else
+    check_dependency 'openssl'
+    echo " ${status_action} Generating admin password hash file ..."
+    mkdir -p "$(dirname "${instance_admin_password_hash_file:?}")"
+    _instance_admin_password=$(cat "${instance_admin_password_file:?}")
+    _instance_admin_password_salt=$(cat "${instance_admin_password_salt_file:?}")
+    openssl passwd -6 -salt "${_instance_admin_password_salt}" "${_instance_admin_password}" \
+      > "${instance_admin_password_hash_file:?}"
+    echo " ${status_success} admin password hash file generated."
   fi
 }
 
@@ -281,6 +347,7 @@ fi
 
 if ${generate}; then
   echo "${status_info}${bold_text}${highlight_text} - Generating project management scripts ... - ${reset_text}"
+  generate_admin_password_hash_file
   generate_ansible_ssh_keys
   generate_bootstrap_scripts
   echo "${status_success}${bold_text}${good_result_text} - Project management scripts generated - ${reset_text}"

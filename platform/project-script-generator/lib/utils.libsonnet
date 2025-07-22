@@ -209,7 +209,7 @@
     no_color():
       |||
         : "${NO_COLOR:=0}"
-        if [[ -z ${NO_COLOR+notset} ]] || [ "${NO_COLOR}" == "0" ]; then
+        if [[ -z ${NO_COLOR:+notset} ]] || [ "${NO_COLOR}" == "0" ]; then
           bold_text=$(tput bold)
           bad_result_text=$(tput setaf 1)
           good_result_text=$(tput setaf 2)

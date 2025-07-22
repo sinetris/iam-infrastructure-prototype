@@ -10,12 +10,14 @@
   // Files path relative to project root directory
   kubernetes_files_path: 'kubernetes',
   admin_username: 'ubuntu',
-  admin_password: std.stripChars(importstr 'generated/assets/admin_password', '\n'),
+  admin_passwd_hash: std.stripChars(importstr 'generated/assets/passwords/admin/hash', '\n'),
+  admin_passwd_plain: std.stripChars(importstr 'generated/assets/passwords/admin/plain', '\n'),
   admin_ssh_authorized_keys: self.ansible_ssh_authorized_keys,
   admin_ssh_import_id: [
     // "gh:octocat",
   ],
-  //// We are using only 1 network interface for now
+  // // We are using only 1 network interface for now and will use multipass
+  // // default settings (no need to configure the network).
   // network: {
   //   name: '%s-HON' % $.project_name,
   //   netmask: '255.255.255.0',

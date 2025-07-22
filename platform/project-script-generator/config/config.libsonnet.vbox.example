@@ -10,7 +10,8 @@
   // Files path relative to project root directory
   kubernetes_files_path: 'kubernetes',
   admin_username: 'ubuntu',
-  admin_password: std.stripChars(importstr 'generated/assets/admin_password', '\n'),
+  admin_passwd_hash: std.stripChars(importstr 'generated/assets/passwords/admin/hash', '\n'),
+  admin_passwd_plain: std.stripChars(importstr 'generated/assets/passwords/admin/plain', '\n'),
   admin_ssh_authorized_keys: self.ansible_ssh_authorized_keys,
   admin_ssh_import_id: [
     // "gh:octocat",
@@ -20,6 +21,16 @@
     netmask: '255.255.255.0',
     lower_ip: '192.168.100.1',
     upper_ip: '192.168.100.100',
+    interfaces: [
+      {
+        type: 'nat',
+        name: 'ethnat',
+      },
+      {
+        type: 'bridge',
+        name: 'ethlab',
+      },
+    ],
   },
   dns_servers: [
     '1.1.1.1',

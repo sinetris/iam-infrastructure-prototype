@@ -6,7 +6,8 @@
   ansible_inventory_path: self.ansible_files_path + '/inventory',
   kubernetes_files_path: 'the kubernetes folder',
   admin_username: 'admin',
-  admin_password: 'admin password',
+  admin_passwd_hash: 'admin password hash',
+  admin_passwd_plain: 'admin password',
   admin_ssh_authorized_keys: [],
   admin_ssh_import_id: [],
 }

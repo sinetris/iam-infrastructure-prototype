@@ -57,9 +57,11 @@ local utils = import 'lib/utils.libsonnet';
           )
         ),
         [if is_admin then 'sudo']: 'ALL=(ALL) NOPASSWD:ALL',
-        [if std.objectHas(user, 'password') then 'passwd']: user.password,
-        [if std.objectHas(user, 'plain_text_passwd') then 'plain_text_passwd']: user.plain_text_passwd,
-        lock_passwd: if std.objectHas(user, 'password') ||
+        [if std.objectHas(user, 'hashed_passwd') then 'hashed_passwd']: user.hashed_passwd,
+        [if std.objectHas(user, 'plain_text_passwd')
+            && !std.objectHas(user, 'hashed_passwd')
+        then 'plain_text_passwd']: user.plain_text_passwd,
+        lock_passwd: if std.objectHas(user, 'hashed_passwd') ||
                         std.objectHas(user, 'plain_text_passwd') then false else true,
         [if std.objectHas(user, 'ssh_import_id')
             && std.isArray(user.ssh_import_id) then 'ssh_import_id']:

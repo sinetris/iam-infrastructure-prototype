@@ -13,8 +13,8 @@ local admin_user =
   {
     username: config.admin_username,
     is_admin: true,
-    [if std.objectHas(config, 'admin_passwd') then 'passwd']: config.admin_passwd,
-    [if std.objectHas(config, 'admin_plain_text_passwd') then 'plain_text_passwd']: config.admin_plain_text_passwd,
+    [if std.objectHas(config, 'admin_passwd_hash') then 'hashed_passwd']: config.admin_passwd_hash,
+    [if std.objectHas(config, 'admin_passwd_plain') then 'plain_text_passwd']: config.admin_passwd_plain,
     [if use_ssh_authorized_keys then 'ssh_authorized_keys']:
       config.admin_ssh_authorized_keys,
     [if use_ssh_import_id then 'ssh_import_id']:
@@ -44,6 +44,7 @@ local add_default_machine_data(setup, instance) =
     timeout: 15 * 60,
     storage_space: '10240',
     admin_username: config.admin_username,
+    [if std.objectHas(config, 'admin_passwd_plain') then 'admin_passwd_plain']: config.admin_passwd_plain,
     users: [admin_user],
     mounts: [
       {
