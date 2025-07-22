@@ -72,35 +72,21 @@ local instance_config(setup, instance) =
   |||
     # - Instance settings -
     instance_name=%(hostname)s
-    instance_username=%(instance_username)s
-    instance_password=%(instance_password)s
     # Disk size in MB
     instance_storage_space=%(instance_storage_space)s
     instance_cpus=%(instance_cpus)s
     instance_memory=%(instance_memory)s
-    instance_vram=%(instance_vram)s
 
     instance_check_timeout_seconds=%(instance_timeout)s
-    instance_check_sleep_time_seconds=2
-    instance_check_ssh_retries=5
 
     instance_basefolder="%(instance_basefolder)s"
-    instance_cidata_files_path=${instance_basefolder:?}/cidata
-    instance_cidata_iso_file="${instance_basefolder:?}/disks/${instance_name:?}-cidata.iso"
-    instance_password_file="${instance_basefolder:?}/assets/admin-password-plain"
-    instance_password_hash_file="${instance_basefolder:?}/assets/admin-password-hash"
-    vbox_instance_disk_file="${instance_basefolder:?}/disks/${instance_name:?}-boot-disk.vdi"
-    instance_config=${instance_basefolder:?}/assets/instance_config.json
   ||| % {
     hostname: instance.hostname,
     instance_basefolder: instance.basefolder,
-    instance_username: instance_username,
-    instance_password: instance_password,
     instance_cpus: cpus,
     instance_storage_space: storage_space,
     instance_timeout: instance.timeout,
     instance_memory: memory,
-    instance_vram: vram,
   };
 
 local check_instance(instance) =
@@ -108,9 +94,9 @@ local check_instance(instance) =
     _instance_name=%(hostname)s
     echo "Checking '${_instance_name}'..."
     _instance_status=$(multipass info --format yaml ${_instance_name} 2>&1) && _exit_code=0 || _exit_code=$?
-    if [[ $_exit_code -eq 0 ]]; then
+    if [[ ${_exit_code} -eq 0 ]]; then
     	echo "${status_success} Instance '${_instance_name}' found!"
-    elif [[ $_exit_code -eq 2 ]] && [[ $_instance_status =~ 'does not exist' ]]; then
+    elif [[ ${_exit_code} -eq 2 ]] && [[ "${_instance_status}" =~ 'does not exist' ]]; then
     	echo "${status_error} Instance '${_instance_name}' not found!" >&2
     	exit 1
     else
@@ -164,7 +150,7 @@ local inline_shell_provisioning(opts) =
     if std.objectHas(opts, 'reboot_on_error') then
       |||
         _exit_code=$?
-        if [[ $_exit_code -eq 0 ]]; then
+        if [[ ${_exit_code} -eq 0 ]]; then
         	echo "No need to reboot"
         else
         	echo "Reboot"
@@ -232,48 +218,48 @@ local create_instance(setup, instance) =
   |||
     %(instance_config)s
     echo "Checking '${instance_name}'..."
-    _instance_status=$(multipass info --format yaml ${instance_name} 2>&1) && _exit_code=0 || _exit_code=$?
-    if [[ $_exit_code -eq 0 ]]; then
+    _instance_status=$(multipass info --format yaml "${instance_name}" 2>&1) && _exit_code=0 || _exit_code=$?
+    if [[ ${_exit_code} -eq 0 ]]; then
     	echo "${status_success} Instance '${instance_name}' already exist!"
-    elif [[ $_exit_code -eq 2 ]] && [[ $_instance_status =~ 'does not exist' ]]; then
+    elif [[ ${_exit_code} -eq 2 ]] && [[ "${_instance_status}" =~ 'does not exist' ]]; then
     	echo " - Create Project data folder and subfolders: '${project_basefolder:?}'"
     	mkdir -p "${instance_basefolder:?}"/{cidata,disks,shared,tmp,assets}
-    	multipass launch --cpus ${instance_cpus} \
-    		--disk ${instance_storage_space}M \
-    		--memory ${instance_memory}M \
+    	multipass launch --cpus "${instance_cpus}" \
+    		--disk "${instance_storage_space}M" \
+    		--memory "${instance_memory}M" \
     		--name "${instance_name}" \
     		--cloud-init "assets/cidata-${instance_name:?}-user-data.yaml" \
-    		--timeout ${instance_check_timeout_seconds} \
-    		%(mounts)s release:${os_release_codename}
-    	_instance_status=$(multipass info --format json ${instance_name} 2>&1) && _exit_code=0 || _exit_code=$?
-    	if [[ $_exit_code -ne 0 ]]; then
-    		echo "${status_error} Could not get instance '${instance_name}' configuration!'" >&2
-    		exit 1
-    	fi
-      _instance_ipv4=$(echo "${_instance_status:?}" | jq --arg host "${instance_name:?}" '.info.[$host].ipv4[0]' --raw-output)
-    	_instance_nic_name=$(multipass exec ${instance_name} \
-    		-- /bin/bash 2>&1 <<-'END'
-    			ip route | awk '/^default/ {print $5; exit}'
-    		END
-    	) && _exit_code=0 || _exit_code=$?
-    	if [[ $_exit_code -ne 0 ]]; then
-    		echo "${status_error} Could not get instance '${instance_name}' network interface!'" >&2
-    		exit 1
-    	fi
-    	PROJECT_TMP_FILE="$(mktemp)"
-    	jq --indent 2 \
-    		--arg host "${instance_name:?}" \
-    		--arg ip "${_instance_ipv4:?}" \
-    		--arg nic "${_instance_nic_name:?}" \
-    		--arg netplan_nic "${netplan_nic_name:?}" \
-    		'.list += {($host): {ipv4: $ip, network_interface_name: $nic, network_interface_netplan_name: $netplan_nic}}' \
-    		"${instances_catalog_file:?}" \
-    		> "$PROJECT_TMP_FILE" && mv "$PROJECT_TMP_FILE" "${instances_catalog_file:?}"
+    		--timeout "${instance_check_timeout_seconds}" \
+    		%(mounts)s "release:${os_release_codename}"
     else
     	echo "${status_error} Instance '${instance_name}' - exit code '${_exit_code}'" >&2
     	echo "${_instance_status}" >&2
     	exit 2
     fi
+    _instance_status=$(multipass info --format json "${instance_name}" 2>&1) && _exit_code=0 || _exit_code=$?
+    if [[ ${_exit_code} -ne 0 ]]; then
+    	echo "${status_error} Could not get instance '${instance_name}' configuration!'" >&2
+    	exit 1
+    fi
+     _instance_ipv4=$(echo "${_instance_status:?}" | jq --arg host "${instance_name:?}" '.info.[$host].ipv4[0]' --raw-output)
+    _instance_nic_name=$(multipass exec "${instance_name}" \
+    	-- /bin/bash 2>&1 <<-'END'
+    		ip route | awk '/^default/ {print $5; exit}'
+    	END
+    ) && _exit_code=0 || _exit_code=$?
+    if [[ ${_exit_code} -ne 0 ]]; then
+    	echo "${status_error} Could not get instance '${instance_name}' network interface!'" >&2
+    	exit 1
+    fi
+    PROJECT_TMP_FILE="$(mktemp)"
+    jq --indent 2 \
+    	--arg host "${instance_name:?}" \
+    	--arg ip "${_instance_ipv4:?}" \
+    	--arg nic "${_instance_nic_name:?}" \
+    	--arg netplan_nic "${netplan_nic_name:?}" \
+    	'.list += {($host): {ipv4: $ip, network_interface_name: $nic, network_interface_netplan_name: $netplan_nic}}' \
+    	"${instances_catalog_file:?}" \
+    	> "${PROJECT_TMP_FILE}" && mv "${PROJECT_TMP_FILE}" "${instances_catalog_file:?}"
   ||| % {
     instance_config: instance_config(setup, instance),
     mounts: utils.indent(std.join(' \\\n', mounts), '\t\t'),
@@ -301,11 +287,11 @@ local snapshot_instance(instance) =
     _instance_name=%(hostname)s
     echo "Check '${_instance_name}' snapshot"
     _instance_status=$(multipass info ${_instance_name} --snapshots 2>&1) && _exit_code=0 || _exit_code=$?
-    if [[ $_exit_code -ne 0 ]]; then
+    if [[ ${_exit_code} -ne 0 ]]; then
     	echo " ${status_error} Instance snapshots for '${_instance_name}' - exit code '${_exit_code}'" >&2
     	echo "${_instance_status}" >&2
     	exit 2
-    elif [[ $_instance_status == *'No snapshots found.'* ]]; then
+    elif [[ "${_instance_status}" == *'No snapshots found.'* ]]; then
     	echo "No snapshots found!"
     	echo "Wait for cloud-init..."
     	multipass exec ${_instance_name} -- cloud-init status --wait --long
