@@ -80,9 +80,9 @@
           local first_item="$2"
           shift 2
           local other_items=("$@")
-          printf "'%s'" "$first_item"
+          printf "'%s'" "${first_item}"
           for item in "${other_items[@]}"; do
-            printf "%s'%s'" "$separator" "$item"
+            printf "%s'%s'" "${separator}" "${item}"
           done
         }
       |||,
@@ -99,7 +99,7 @@
           local found_code=0
           local not_found_code=1
           for element in "${elements[@]}"; do
-            if [[ "$element" == "$seeking" ]]; then
+            if [[ "${element}" == "${seeking}" ]]; then
               return ${found_code}
             fi
           done
@@ -317,12 +317,12 @@
         );
       |||
         _instance_username=$(jq -r --arg host "%(instance_name)s" '.list.[$host].admin_username' "${instances_catalog_file:?}") && _exit_code=0 || _exit_code=$?
-        if [[ $_exit_code -ne 0 ]]; then
+        if [[ ${_exit_code} -ne 0 ]]; then
           echo " ${status_error} Could not get 'admin_username' for instance '%(instance_name)s'" >&2
           exit 2
         fi
         _instance_host=$(jq -r --arg host "%(instance_name)s" '.list.[$host].ipv4' "${instances_catalog_file:?}") && _exit_code=0 || _exit_code=$?
-        if [[ $_exit_code -ne 0 ]]; then
+        if [[ ${_exit_code} -ne 0 ]]; then
           echo " ${status_error} Could not get 'ipv4' for instance '%(instance_name)s'" >&2
           exit 2
         fi
@@ -344,10 +344,10 @@
         _instance_check_ssh_success=false
         echo "${status_info} Wait for SSH and run command"
         set +e
-        for retry_counter in $(seq "$_check_retries" 1); do
+        for retry_counter in $(seq "${_check_retries}" 1); do
           %(ssh_exec)s
           _exit_code=$?
-          if [[ $_exit_code -eq 0 ]]; then
+          if [[ ${_exit_code} -eq 0 ]]; then
             echo "${status_success} SSH command ran successfully!"
             _instance_check_ssh_success=true
             break

@@ -110,7 +110,7 @@ local vbox_project_config(setup) =
     project_network_lower_ip=%(network_lower_ip)s
     project_network_upper_ip=%(network_upper_ip)s
     project_network_name=%(network_name)s
-    os_images_path="$HOME/.cache/os-images"
+    os_images_path="${HOME}/.cache/os-images"
     os_images_url=https://cloud-images.ubuntu.com
     # Serial Port mode:
     #   file = log boot sequence to file
@@ -134,22 +134,22 @@ local instance_shutdown(instance_name, timeout=90, sleep=5) =
     echo "Stopping '%(instance_name)s'..."
     VBoxManage controlvm "%(instance_name)s" shutdown || echo "Ignoring"
     echo "Waiting for '%(instance_name)s' shutdown..."
-    _start_time=$SECONDS
+    _start_time=${SECONDS}
     _command_success=false
     _check_timeout_seconds=%(timeout)s
     _seconds_to_timeout=${_check_timeout_seconds}
     _sleep_time_seconds=%(sleep)s
-    until $_command_success; do
+    until ${_command_success}; do
       if (( _seconds_to_timeout <= 0 )); then
         echo "${status_error} Instance '%(instance_name)s' check timeout!" >&2
         exit 1
       fi
       _cmd_status=$(VBoxManage showvminfo "%(instance_name)s" --machinereadable 2>&1) \
         && _exit_code=0 || _exit_code=$?
-      if [[ $_exit_code -ne 0 ]]; then
+      if [[ ${_exit_code} -ne 0 ]]; then
         echo "${status_error} Error checking '%(instance_name)s'" >&2
         exit 2
-      elif [[ "$_cmd_status" =~ 'VMState="poweroff"' ]]; then
+      elif [[ "${_cmd_status}" =~ 'VMState="poweroff"' ]]; then
         echo "${status_info} Instance '%(instance_name)s' shutdown!"
         _command_success=true
       else
@@ -170,22 +170,22 @@ local instance_wait_started(instance_name, script='whoami', timeout=90, sleep=5)
     echo "Starting '${_instance_name_to_wait:?}'..."
     VBoxManage startvm "${_instance_name_to_wait:?}" --type headless
     echo "Waiting for '${_instance_name_to_wait:?}' to be ready..."
-    _start_time=$SECONDS
+    _start_time=${SECONDS}
     _command_success=false
     _check_timeout_seconds=%(timeout)s
     _seconds_to_timeout=${_check_timeout_seconds}
     _sleep_time_seconds=%(sleep)s
-    until $_command_success; do
+    until ${_command_success}; do
       if (( _seconds_to_timeout <= 0 )); then
         echo "${status_error} Instance '${_instance_name_to_wait:?}' check timeout!" >&2
         exit 1
       fi
       _cmd_status=$(VBoxManage showvminfo "${_instance_name_to_wait:?}" --machinereadable 2>&1) \
         && _exit_code=0 || _exit_code=$?
-      if [[ $_exit_code -ne 0 ]]; then
+      if [[ ${_exit_code} -ne 0 ]]; then
         echo "${status_error} Error checking '${_instance_name_to_wait:?}'" >&2
         exit 2
-      elif [[ "$_cmd_status" =~ 'VMState="running"' ]]; then
+      elif [[ "${_cmd_status}" =~ 'VMState="running"' ]]; then
         echo "${status_info} Instance '${_instance_name_to_wait:?}' running!"
         _command_success=true
       else
@@ -212,18 +212,18 @@ local check_instance_exist_do(setup, instance, action_code) =
     instance_name=%(hostname)s
     echo " ${status_info} ${info_text}Checking '${instance_name:?}'...${reset_text}"
     _instance_status=$(VBoxManage showvminfo "${instance_name:?}" --machinereadable 2>&1) && _exit_code=0 || _exit_code=$?
-    if [[ $_exit_code -eq 0 ]] && { \
-      [[ $_instance_status =~ 'VMState="started"' ]] \
-      || [[ $_instance_status =~ 'VMState="running"' ]]; \
+    if [[ ${_exit_code} -eq 0 ]] && { \
+      [[ "${_instance_status}" =~ 'VMState="started"' ]] \
+      || [[ "${_instance_status}" =~ 'VMState="running"' ]]; \
     }; then
       echo " ${status_ok} Instance '${instance_name:?}' found!"
-    elif [[ $_exit_code -eq 0 ]] && [[ $_instance_status =~ 'VMState="poweroff"' ]]; then
+    elif [[ ${_exit_code} -eq 0 ]] && [[ "${_instance_status}" =~ 'VMState="poweroff"' ]]; then
       echo "${status_warning} Skipping instance '${instance_name:?}' - Already exist but in state 'poweroff'!"
-    elif [[ $_exit_code -eq 0 ]]; then
+    elif [[ ${_exit_code} -eq 0 ]]; then
       echo "${status_error} Instance '${instance_name:?}' already exist but in UNMANAGED state!" >&2
       echo "${_instance_status}" >&2
       exit 1
-    elif [[ $_exit_code -eq 1 ]] && [[ $_instance_status =~ 'Could not find a registered machine' ]]; then
+    elif [[ ${_exit_code} -eq 1 ]] && [[ "${_instance_status}" =~ 'Could not find a registered machine' ]]; then
       %(action_code)s
     else
       echo "${status_error} Instance '${instance_name:?}' - exit code '${_exit_code}'"
@@ -240,9 +240,9 @@ local create_network(setup) =
     echo " ${status_info} Checking Network '${project_network_name}'..."
     _project_network_status=$(VBoxManage hostonlynet modify \
       --name ${project_network_name} --enable 2>&1) && _exit_code=0 || _exit_code=$?
-    if [[ $_exit_code -eq 0 ]]; then
+    if [[ ${_exit_code} -eq 0 ]]; then
       echo " ${status_ok} Project Network '${project_network_name}' already exist!"
-    elif [[ $_exit_code -eq 1 ]] && [[ $_project_network_status =~ 'does not exist' ]]; then
+    elif [[ ${_exit_code} -eq 1 ]] && [[ "${_project_network_status}" =~ 'does not exist' ]]; then
       echo " ${status_action} Creating Project Network '${project_network_name}'..."
       VBoxManage hostonlynet add \
         --name ${project_network_name} \
@@ -262,11 +262,11 @@ local remove_network(setup) =
   |||
     _network_status=$(VBoxManage hostonlynet modify \
       --name ${project_network_name} --disable 2>&1) && _exit_code=0 || _exit_code=$?
-    if [[ $_exit_code -eq 0 ]]; then
+    if [[ ${_exit_code} -eq 0 ]]; then
       echo "${status_action} Project Network '${project_network_name}' will be removed!"
       VBoxManage hostonlynet remove \
         --name ${project_network_name}
-    elif [[ $_exit_code -eq 1 ]] && [[ $_network_status =~ 'does not exist' ]]; then
+    elif [[ ${_exit_code} -eq 1 ]] && [[ "${_network_status}" =~ 'does not exist' ]]; then
       echo "${status_ok} Project Network '${project_network_name}' does not exist!"
     else
       echo "${status_error} Project Network '${project_network_name}' - exit code '${_exit_code}'"
@@ -363,7 +363,7 @@ local create_instance(setup, instance) =
       --from-file "${generated_files_path:?}/lib/jq/filters/get_vbox_mapping_value.jq" \
       "${vbox_os_mapping_file:?}" 2>&1) && _exit_code=0 || _exit_code=$?
 
-    if [[ $_exit_code -ne 0 ]]; then
+    if [[ ${_exit_code} -ne 0 ]]; then
       echo " ${status_error} Could not get 'os_type'"
       echo "${vbox_instance_ostype}"
       exit 2
@@ -377,7 +377,7 @@ local create_instance(setup, instance) =
       --from-file "${generated_files_path:?}/lib/jq/filters/get_vbox_mapping_value.jq" \
       "${vbox_os_mapping_file:?}" 2>&1) && _exit_code=0 || _exit_code=$?
 
-    if [[ $_exit_code -ne 0 ]]; then
+    if [[ ${_exit_code} -ne 0 ]]; then
       echo " ${status_error} Could not get 'os_release_file'"
       echo "${os_release_file}"
       exit 2
@@ -555,11 +555,11 @@ local create_instance(setup, instance) =
 
     echo "Wait for instance IPv4 or error on timeout after ${instance_check_timeout_seconds} seconds..."
 
-    _start_time=$SECONDS
+    _start_time=${SECONDS}
     _instance_ipv4=""
     _command_success=false
-    _seconds_to_timeout=$instance_check_timeout_seconds
-    until $_command_success; do
+    _seconds_to_timeout=${instance_check_timeout_seconds}
+    until ${_command_success}; do
       if (( _seconds_to_timeout <= 0 )); then
         echo "${status_warning} VirtualBox instance '${instance_name:?}' check timeout!" >&2
         exit 1
@@ -567,16 +567,16 @@ local create_instance(setup, instance) =
       _cmd_status=$(VBoxManage guestproperty get "${instance_name:?}" "${_vbox_lab_nic_ipv4_property:?}" 2>&1) \
         && _exit_code=0 || _exit_code=$?
 
-      if [[ $_exit_code -ne 0 ]]; then
+      if [[ ${_exit_code} -ne 0 ]]; then
         echo "${status_warning} Error in VBoxManage for 'guestproperty get ${instance_name:?} ${_vbox_lab_nic_ipv4_property:?}'" >&2
         exit 2
-      elif [[ "$_cmd_status" =~ 'No value set!' ]]; then
+      elif [[ "${_cmd_status}" =~ 'No value set!' ]]; then
         echo "${status_waiting} Not ready yet! Retry in: ${instance_check_sleep_time_seconds}s - Timeout in: ${_seconds_to_timeout}s"
         sleep ${instance_check_sleep_time_seconds}
       else
         echo "${status_success} Instance '${instance_name:?}' network ready!"
         _command_success=true
-        _instance_ipv4=$(echo "$_cmd_status" | awk '{print $2}')
+        _instance_ipv4=$(echo "${_cmd_status}" | awk '{print $2}')
       fi
       (( _seconds_to_timeout = instance_check_timeout_seconds - (SECONDS - _start_time)))
     done
@@ -597,8 +597,8 @@ local create_instance(setup, instance) =
       --arg admin_username "${instance_username:?}" \
       '.list += {($host): {ipv4: $ip, mac_address: $macaddr, network_interface_name: $nic, network_interface_netplan_name: $nic, admin_username: $admin_username}}' \
       "${instances_catalog_file:?}" \
-      > "$PROJECT_TMP_FILE"
-    mv "$PROJECT_TMP_FILE" "${instances_catalog_file:?}"
+      > "${PROJECT_TMP_FILE}"
+    mv "${PROJECT_TMP_FILE}" "${instances_catalog_file:?}"
     echo "Wait for cloud-init to complete..."
 
     %(ssh_check_retry)s
@@ -621,12 +621,12 @@ local destroy_instance(setup, instance) =
     %(instance_config)s
     _instance_status=$(VBoxManage showvminfo "${instance_name:?}" --machinereadable 2>&1) \
       && _exit_code=0 || _exit_code=$?
-    if [[ $_exit_code -eq 0 ]]; then
+    if [[ ${_exit_code} -eq 0 ]]; then
       echo "${status_action} Destroying instance '${instance_name:?}'!"
       # Try to stop instance and ignore errors
       VBoxManage controlvm "${instance_name:?}" poweroff >/dev/null 2>&1 || true
       VBoxManage unregistervm "${instance_name:?}" --delete-all
-    elif [[ $_exit_code -eq 1 ]] && [[ $_instance_status =~ 'Could not find a registered machine' ]]; then
+    elif [[ ${_exit_code} -eq 1 ]] && [[ "${_instance_status}" =~ 'Could not find a registered machine' ]]; then
       echo "${status_ok} Instance '${instance_name:?}' not found!"
     else
       echo "${status_error} Skipping instance '${instance_name:?}' - exit code '${_exit_code}'"
@@ -646,15 +646,15 @@ local snapshot_instance(setup, instance) =
     %(instance_config)s
     _instance_snaphot_name=base-snapshot
     echo "Check '${instance_name}' snapshot"
-    _instance_status=$(VBoxManage snapshot ${instance_name} showvminfo ${_instance_snaphot_name} 2>&1) && _exit_code=0 || _exit_code=$?
-    if [[ $_exit_code -eq 1 ]] && [[ $_instance_status =~ 'This machine does not have any snapshots' ]]; then
+    _instance_status=$(VBoxManage snapshot "${instance_name}" showvminfo "${_instance_snaphot_name}" 2>&1) && _exit_code=0 || _exit_code=$?
+    if [[ ${_exit_code} -eq 1 ]] && [[ "${_instance_status}" =~ 'This machine does not have any snapshots' ]]; then
       echo "No snapshots found!"
       %(instance_shutdown)s
       echo "Create snapshot for '${instance_name}'..."
-      VBoxManage snapshot "${instance_name:?}" take ${_instance_snaphot_name} --description "First snapshot for '${instance_name}'"
+      VBoxManage snapshot "${instance_name:?}" take "${_instance_snaphot_name}" --description "First snapshot for '${instance_name}'"
       echo "Restarting '${instance_name}' ..."
       %(instance_wait_started)s
-    elif [[ $_exit_code -ne 0 ]]; then
+    elif [[ ${_exit_code} -ne 0 ]]; then
       echo " ${status_error} Error checking snapshots for '${instance_name}' - exit code '${_exit_code}'" >&2
       echo "${_instance_status}" >&2
       exit 2
@@ -715,12 +715,12 @@ local file_provisioning(opts) =
         |||
           source_hostname=%(host)s
           source_instance_username=$(jq -r --arg host "${source_hostname:?}" '.list.[$host].admin_username' "${instances_catalog_file:?}") && _exit_code=0 || _exit_code=$?
-          if [[ $_exit_code -ne 0 ]]; then
+          if [[ ${_exit_code} -ne 0 ]]; then
             echo " ${status_error} Could not get 'admin_username' for instance '${source_hostname:?}'" >&2
             exit 2
           fi
           source_instance_host=$(jq -r --arg host "${source_hostname:?}" '.list.[$host].ipv4' "${instances_catalog_file:?}") && _exit_code=0 || _exit_code=$?
-          if [[ $_exit_code -ne 0 ]]; then
+          if [[ ${_exit_code} -ne 0 ]]; then
             echo " ${status_error} Could not get 'ipv4' for instance '${source_hostname:?}'" >&2
             exit 2
           fi
@@ -731,12 +731,12 @@ local file_provisioning(opts) =
         |||
           destination_hostname=%(host)s
           destination_instance_username=$(jq -r --arg host "${destination_hostname:?}" '.list.[$host].admin_username' "${instances_catalog_file:?}") && _exit_code=0 || _exit_code=$?
-          if [[ $_exit_code -ne 0 ]]; then
+          if [[ ${_exit_code} -ne 0 ]]; then
             echo " ${status_error} Could not get 'admin_username' for instance '${destination_hostname:?}'" >&2
             exit 2
           fi
           destination_instance_host=$(jq -r --arg host "${destination_hostname:?}" '.list.[$host].ipv4' "${instances_catalog_file:?}") && _exit_code=0 || _exit_code=$?
-          if [[ $_exit_code -ne 0 ]]; then
+          if [[ ${_exit_code} -ne 0 ]]; then
             echo " ${status_error} Could not get 'ipv4' for instance '${destination_hostname:?}'" >&2
             exit 2
           fi
@@ -824,7 +824,7 @@ local inline_shell_provisioning(opts) =
         _exit_code=$?
         set -e
         _instance_name=%(destination_host)s
-        if [[ $_exit_code -eq 0 ]]; then
+        if [[ ${_exit_code} -eq 0 ]]; then
           echo "No need to reboot '${_instance_name:?}'"
         else
           echo "${status_action} Reboot '${_instance_name:?}'..."
@@ -833,7 +833,7 @@ local inline_shell_provisioning(opts) =
           _instance_check_etries=10
           for _retry_counter in $(seq ${_instance_check_etries:?} 1); do
             _instance_status=$(VBoxManage showvminfo "${_instance_name:?}" --machinereadable 2>&1) && _exit_code=0 || _exit_code=$?
-            if [[ $_exit_code -eq 0 ]] && [[ $_instance_status =~ 'VMState="running"' ]]; then
+            if [[ ${_exit_code} -eq 0 ]] && [[ "${_instance_status}" =~ 'VMState="running"' ]]; then
               echo " ${status_info} We can reboot '${_instance_name:?}'!"
               _instance_check_success=true
               break
@@ -1138,7 +1138,7 @@ local provision_instances(setup) =
 
       instance_hostname=${1:?}
       instance_username=$(jq --exit-status -r --arg host "${instance_hostname:?}" '.list.[$host].admin_username' "${instances_catalog_file:?}") && _exit_code=0 || _exit_code=$?
-      if [[ $_exit_code -ne 0 ]]; then
+      if [[ ${_exit_code} -ne 0 ]]; then
         echo " ${status_error} Could not get 'username' for instance '${instance_hostname:?}'" >&2
         exit 1
       fi

@@ -73,7 +73,7 @@ local add_default_machine_data(setup, instance) =
   orchestrator_name: std.extVar('orchestrator_name'),
   project_root_path: std.extVar('project_root_path'),
   project_generator_path: self.project_root_path + '/platform/project-script-generator',
-  projects_folder: '$HOME/.local/projects',
+  projects_folder: '${HOME}/.local/projects',
   project_basefolder: self.projects_folder + '/' + self.project_name,
   os_distro: 'ubuntu',
   os_release_codename: 'noble',
@@ -132,7 +132,7 @@ local add_default_machine_data(setup, instance) =
           script:
             |||
               set -Eeuo pipefail
-              source $HOME/.profile
+              source "${HOME}/.profile"
               echo '# Generated file' > inventory/machines_ips
               cat inventory/machines_config.json \
                 | jq '.list | {all: {hosts: with_entries({key: .key, value: .value | with_entries(.key |= if . == "ipv4" then "ansible_host" else . end) })}}' \
@@ -177,7 +177,7 @@ local add_default_machine_data(setup, instance) =
       script:
         |||
           set -Eeuo pipefail
-          source $HOME/.profile
+          source "${HOME}/.profile"
           ansible-playbook playbooks/bootstrap-ansible-controller
           ansible-playbook playbooks/bootstrap-bind
           ansible-playbook playbooks/basic-bootstrap
@@ -201,7 +201,7 @@ local add_default_machine_data(setup, instance) =
       script:
         |||
           set -Eeuo pipefail
-          source $HOME/.profile
+          source "${HOME}/.profile"
           ansible-playbook playbooks/all-setup
         |||,
     },
