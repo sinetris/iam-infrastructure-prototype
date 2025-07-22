@@ -11,7 +11,12 @@
 - name: Dearmor Microsoft Signing Certificate
   become: true
   ansible.builtin.command:
-    cmd: "gpg --dearmor {{ apt_keyring_path }}/microsoft.asc"
+    argv:
+      - gpg
+      - --output
+      - "{{ apt_keyring_share_path }}/microsoft.gpg"
+      - --dearmor
+      - "{{ apt_keyring_path }}/microsoft.asc"
     creates: "{{ apt_keyring_share_path }}/microsoft.gpg"
 - name: Add the VS Code Repository
   ansible.builtin.apt_repository:
