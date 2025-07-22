@@ -65,10 +65,7 @@ local instance_config(setup, instance) =
   local cpus = std.get(instance, 'cpus', '1');
   local storage_space = std.get(instance, 'storage_space', '5000');
   local instance_username = std.get(instance, 'admin_username', 'ubuntu');
-  local instance_password = std.get(instance, 'admin_password_plain', 'password');
   local memory = std.get(instance, 'memory', '1024');
-  // Note: vram is not used in multipass
-  local vram = std.get(instance, 'vram', '64');
   |||
     # - Instance settings -
     instance_name=%(hostname)s
