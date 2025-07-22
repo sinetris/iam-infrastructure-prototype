@@ -1111,9 +1111,9 @@ local provision_instances(setup) =
       . "${generated_files_path:?}/lib/project_config.sh"
 
       if [ $# -lt 1 ]; then
-        instances=( %(instances)s )
         for instance in %(instances)s; do
-          VBoxManage showvminfo "${instance:?}" --machinereadable
+          echo "${info_text}Instance:${reset_text} ${bold_text}${instance}${reset_text}"
+          VBoxManage showvminfo "${instance}" --machinereadable
         done
       else
         VBoxManage showvminfo "${1:?}" --machinereadable
@@ -1168,12 +1168,15 @@ local provision_instances(setup) =
       . "${generated_files_path:?}/lib/utils.sh"
       . "${generated_files_path:?}/lib/project_config.sh"
 
-      if [ $# -lt 1 ]; then
+      if [[ $# -lt 1 ]]; then
         echo "${info_text}Usage:${reset_text} ${bold_text}$0 VIRTUAL_MACHINE_IP${reset_text}"
         exit 0
       fi
 
-      instance_ip_output=$(VBoxManage guestproperty enumerate "$1" --no-flags --no-timestamp '/VirtualBox/GuestInfo/Net/0/V4/IP' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')
+      instance_info=$(VBoxManage guestproperty enumerate "$1" --no-flags --no-timestamp '/VirtualBox/GuestInfo/Net/*')
+      echo "${info_text}Instance:${reset_text} ${bold_text}$1${reset_text}"
+      echo "${info_text}Network:${reset_text}"
+      echo "${bold_text}${instance_info}${reset_text}"
     ||| % {
       instances: std.join(' ', instances),
     },
