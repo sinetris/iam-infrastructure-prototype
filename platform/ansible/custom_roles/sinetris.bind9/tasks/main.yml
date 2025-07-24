@@ -56,12 +56,22 @@
   notify:
     - reload bind9
 
+- name: Create ansible tmp directory for bind9 user
+  ansible.builtin.file:
+    path: "/tmp/.ansible-{{ bind9_user }}/tmp"
+    state: directory
+    owner: "{{ bind9_user }}"
+    group: "{{ ansible_user }}"
+    mode: u=rwx,g=rwx,o=
+  become: true
+
 - name: Check validity of named.conf
   ansible.builtin.command: named-checkconf
   become: true
   become_user: "{{ bind9_user }}"
   changed_when: false
   vars:
+    ansible_remote_tmp: "/tmp/.ansible-{{ bind9_user }}/tmp"
     ansible_ssh_pipelining: true
 
 - name: Create bind9 zone files
@@ -94,4 +104,5 @@
   when: zone.type | default(bind9_default_zone_type) is eq('primary')
   changed_when: false
   vars:
+    ansible_remote_tmp: "/tmp/.ansible-{{ bind9_user }}/tmp"
     ansible_ssh_pipelining: true
