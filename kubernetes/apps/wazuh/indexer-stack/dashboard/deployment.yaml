@@ -1,13 +1,4 @@
 ---
-# Copyright (C) 2019, Wazuh Inc.
-#
-# This program is a free software; you can redistribute it
-# and/or modify it under the terms of the GNU General Public
-# License (version 2) as published by the FSF - Free Software
-# Foundation.
-
-# Dashboard Deployment
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -39,8 +30,8 @@ spec:
             memory: 1Gi
         volumeMounts:
         - name: config
-          mountPath: /usr/share/wazuh-dashboard/config/opensearch_dashboards.yml
-          subPath: opensearch_dashboards.yml
+          mountPath: /usr/share/wazuh-dashboard/config/opensearch-dashboards.yml
+          subPath: opensearch-dashboards.yml
           readOnly: false
         - name: dashboard-certs
           mountPath: /usr/share/wazuh-dashboard/certs/cert.pem
@@ -59,7 +50,7 @@ spec:
           name: dashboard
         env:
         - name: INDEXER_URL
-          value: 'https://wazuh-indexer-0.wazuh-indexer:9200'
+          value: 'https://indexer:9200'
         - name: INDEXER_USERNAME
           valueFrom:
             secretKeyRef:
