@@ -81,3 +81,32 @@
     owner: "{{ desktop_user }}"
     group: "{{ desktop_user }}"
     mode: u=rwx,g=rx,o=
+- name: Enable kubectl autocompletion
+  ansible.builtin.shell:
+    cmd: kubectl completion bash > /etc/bash_completion.d/kubectl
+    creates: /etc/bash_completion.d/kubectl
+- name: Enable kustomize autocompletion
+  ansible.builtin.shell:
+    cmd: kustomize completion bash > /etc/bash_completion.d/kustomize
+    creates: /etc/bash_completion.d/kustomize
+- name: Enable helm autocompletion
+  ansible.builtin.shell:
+    cmd: helm completion bash > /etc/bash_completion.d/helm
+    creates: /etc/bash_completion.d/helm
+- name: Create ansible tmp directory for desktop user
+  ansible.builtin.file:
+    path: "/tmp/.ansible-{{ desktop_user }}/tmp"
+    state: directory
+    owner: "{{ desktop_user }}"
+    group: "{{ ansible_user }}"
+    mode: u=rwx,g=rwx,o=
+  become: true
+- name: Configure iam-demo-tech as default k8s cluster for desktop user
+  become: true
+  become_user: "{{ desktop_user }}"
+  ansible.builtin.lineinfile:
+    path: ${HOME}/.bashrc
+    regexp: '^export KUBECONFIG='
+    line: export KUBECONFIG=~/.kube/config-iam-demo-tech
+  vars:
+    ansible_remote_tmp: "/tmp/.ansible-{{ desktop_user }}/tmp"
