@@ -5,9 +5,8 @@ local generic_project_config(setup) =
   assert std.isObject(setup);
   assert std.objectHas(setup, 'project_name');
   assert std.objectHas(setup, 'project_domain');
-  assert std.objectHas(setup, 'projects_folder');
   assert std.objectHas(setup, 'project_basefolder');
-  assert std.objectHas(setup, 'project_root_path');
+  assert std.objectHas(setup, 'project_source_path');
   assert std.objectHas(setup, 'project_generator_path');
   assert std.objectHas(setup, 'os_release_codename');
   assert std.objectHas(setup, 'host_architecture');
@@ -15,9 +14,8 @@ local generic_project_config(setup) =
     # -- start: generic-project-config
     project_name=%(project_name)s
     project_domain="${project_name:?}.test"
-    projects_folder=%(projects_folder)s
     project_basefolder="%(project_basefolder)s"
-    project_root_path="%(project_root_path)s"
+    project_source_path="%(project_source_path)s"
     project_generator_path="%(project_generator_path)s"
     os_release_codename=%(os_release_codename)s
     host_architecture=%(host_architecture)s
@@ -28,9 +26,8 @@ local generic_project_config(setup) =
   ||| % {
     project_name: setup.project_name,
     project_domain: setup.project_domain,
-    projects_folder: setup.projects_folder,
     project_basefolder: setup.project_basefolder,
-    project_root_path: setup.project_root_path,
+    project_source_path: setup.project_source_path,
     project_generator_path: setup.project_generator_path,
     os_release_codename: setup.os_release_codename,
     host_architecture: setup.host_architecture,
@@ -98,12 +95,12 @@ local vbox_bash_architecture_configs() =
 
 local vbox_project_config(setup) =
   assert std.isObject(setup);
-  assert std.objectHas(setup, 'network');
+  assert std.objectHas(setup, 'network') : 'Missing network in setup';
   local network = std.get(setup, 'network');
-  assert std.objectHas(network, 'name');
-  assert std.objectHas(network, 'netmask');
-  assert std.objectHas(network, 'lower_ip');
-  assert std.objectHas(network, 'upper_ip');
+  assert std.objectHas(network, 'name') : 'Missing name in network setup';
+  assert std.objectHas(network, 'netmask') : 'Missing netmask in network setup';
+  assert std.objectHas(network, 'lower_ip') : 'Missing lower_ip in network setup';
+  assert std.objectHas(network, 'upper_ip') : 'Missing upper_ip in network setup';
   |||
     # -- start: vbox-project-config
     project_network_netmask=%(network_netmask)s
@@ -239,16 +236,16 @@ local create_network(setup) =
   |||
     echo " ${status_info} Checking Network '${project_network_name}'..."
     _project_network_status=$(VBoxManage hostonlynet modify \
-      --name ${project_network_name} --enable 2>&1) && _exit_code=0 || _exit_code=$?
+      --name "${project_network_name}" --enable 2>&1) && _exit_code=0 || _exit_code=$?
     if [[ ${_exit_code} -eq 0 ]]; then
       echo " ${status_ok} Project Network '${project_network_name}' already exist!"
     elif [[ ${_exit_code} -eq 1 ]] && [[ "${_project_network_status}" =~ 'does not exist' ]]; then
       echo " ${status_action} Creating Project Network '${project_network_name}'..."
       VBoxManage hostonlynet add \
-        --name ${project_network_name} \
-        --netmask ${project_network_netmask:?} \
-        --lower-ip ${project_network_lower_ip:?} \
-        --upper-ip ${project_network_upper_ip:?} \
+        --name "${project_network_name}" \
+        --netmask "${project_network_netmask:?}" \
+        --lower-ip "${project_network_lower_ip:?}" \
+        --upper-ip "${project_network_upper_ip:?}" \
         --enable
       echo " ${status_success} Project Network '${project_network_name}' created."
     else
@@ -261,11 +258,11 @@ local create_network(setup) =
 local remove_network(setup) =
   |||
     _network_status=$(VBoxManage hostonlynet modify \
-      --name ${project_network_name} --disable 2>&1) && _exit_code=0 || _exit_code=$?
+      --name "${project_network_name}" --disable 2>&1) && _exit_code=0 || _exit_code=$?
     if [[ ${_exit_code} -eq 0 ]]; then
       echo "${status_action} Project Network '${project_network_name}' will be removed!"
       VBoxManage hostonlynet remove \
-        --name ${project_network_name}
+        --name "${project_network_name}"
     elif [[ ${_exit_code} -eq 1 ]] && [[ "${_network_status}" =~ 'does not exist' ]]; then
       echo "${status_ok} Project Network '${project_network_name}' does not exist!"
     else
@@ -306,7 +303,6 @@ local instance_config(setup, instance) =
     instance_cidata_files_path=${instance_basefolder:?}/cidata
     instance_cidata_iso_file="${instance_basefolder:?}/disks/${instance_name:?}-cidata.iso"
     vbox_instance_disk_file="${instance_basefolder:?}/disks/${instance_name:?}-boot-disk.vdi"
-    instance_config=${instance_basefolder:?}/assets/instance_config.json
   ||| % {
     instance_hostname: instance.hostname,
     instance_username: instance_username,
@@ -388,7 +384,7 @@ local create_instance(setup, instance) =
     os_image_path="${os_images_path}/${os_release_file:?}"
     echo " ${status_info} Create instance data folder and subfolders: '${project_basefolder:?}'"
     mkdir -p "${instance_basefolder:?}"/{cidata,disks,shared,tmp,assets}
-    if [ -f "${os_image_path:?}" ]; then
+    if [[ -f "${os_image_path:?}" ]]; then
       echo " ${status_info} Using existing '${os_release_file:?}' from '${os_image_path:?}'!"
     else
       echo " ${status_action} Downloading '${os_release_file:?}' from '${os_image_url:?}'..."
@@ -430,7 +426,7 @@ local create_instance(setup, instance) =
     echo " - Create VirtualMachine"
     VBoxManage createvm \
       --name "${instance_name:?}" \
-      --platform-architecture ${vbox_architecture:?} \
+      --platform-architecture "${vbox_architecture:?}" \
       --basefolder "${vbox_basefolder:?}" \
       --ostype "${vbox_instance_ostype:?}" \
       --register
@@ -447,7 +443,7 @@ local create_instance(setup, instance) =
       --nic-type1 82540EM \
       --cable-connected1 on \
       --nic2 hostonlynet \
-      --host-only-net2 ${project_network_name} \
+      --host-only-net2 "${project_network_name}" \
       --mac-address2="${_instance_mac_address_lab_vbox}" \
       --nic-type2 82540EM \
       --cable-connected2 on \
@@ -480,7 +476,7 @@ local create_instance(setup, instance) =
     echo " - Resize instance main disk to '${instance_storage_space:?} MB'"
     VBoxManage modifymedium disk \
       "${vbox_instance_disk_file:?}" \
-      --resize ${instance_storage_space:?}
+      --resize "${instance_storage_space:?}"
     echo " - Attach main disk to instance"
     VBoxManage storageattach \
       "${instance_name:?}" \
@@ -527,7 +523,7 @@ local create_instance(setup, instance) =
       "${instance_name:?}" \
       --boot1 disk \
       --boot2 dvd
-    if [ "${vbox_instance_uart_mode}" == "file" ]; then
+    if [[ "${vbox_instance_uart_mode}" == "file" ]]; then
       _uart_file="${instance_basefolder:?}/tmp/tty0.log"
       echo " ${status_memo} Set Serial Port to log boot sequence"
       touch "${_uart_file:?}"
@@ -572,7 +568,7 @@ local create_instance(setup, instance) =
         exit 2
       elif [[ "${_cmd_status}" =~ 'No value set!' ]]; then
         echo "${status_waiting} Not ready yet! Retry in: ${instance_check_sleep_time_seconds}s - Timeout in: ${_seconds_to_timeout}s"
-        sleep ${instance_check_sleep_time_seconds}
+        sleep "${instance_check_sleep_time_seconds}"
       else
         echo "${status_success} Instance '${instance_name:?}' network ready!"
         _command_success=true
@@ -582,7 +578,6 @@ local create_instance(setup, instance) =
     done
 
     echo "Instance IPv4: ${_instance_ipv4:?}"
-    instance_config=${instance_basefolder:?}/assets/instance_config.json
 
     _vbox_lab_nic_name_property="/VirtualBox/GuestInfo/Net/${_vbox_lab_nic_id:?}/Name"
     _instance_nic_name=$(VBoxManage guestproperty get "${instance_name:?}" "${_vbox_lab_nic_name_property:?}" | awk '{print $2}' 2>&1)
@@ -634,6 +629,12 @@ local destroy_instance(setup, instance) =
     fi
     VBoxManage closemedium dvd "${instance_cidata_iso_file:?}" --delete 2>/dev/null \
       || echo "${status_info} Disk '${instance_cidata_iso_file}' does not exist!"
+    _instance_tmp_folder=${instance_basefolder:?}/tmp
+    echo "${status_info} ${info_text}Deleting '${instance_name:?}' tmp files${reset_text}"
+    rm -rfv "${_instance_tmp_folder:?}"/*
+    _instance_disks_folder=${instance_basefolder:?}/disks
+    echo "${status_info} ${info_text}Deleting '${instance_name:?}' disks files${reset_text}"
+    rm -rfv "${_instance_disks_folder:?}"/*
   ||| % {
     instance_config: instance_config(setup, instance),
     hostname: instance.hostname,
@@ -831,7 +832,7 @@ local inline_shell_provisioning(opts) =
           _instance_check_success=false
           _instance_check_sleep_seconds=2
           _instance_check_etries=10
-          for _retry_counter in $(seq ${_instance_check_etries:?} 1); do
+          for _retry_counter in $(seq "${_instance_check_etries:?}" 1); do
             _instance_status=$(VBoxManage showvminfo "${_instance_name:?}" --machinereadable 2>&1) && _exit_code=0 || _exit_code=$?
             if [[ ${_exit_code} -eq 0 ]] && [[ "${_instance_status}" =~ 'VMState="running"' ]]; then
               echo " ${status_info} We can reboot '${_instance_name:?}'!"
@@ -839,7 +840,7 @@ local inline_shell_provisioning(opts) =
               break
             else
               echo "${status_waiting} Will retry command in ${_instance_check_sleep_seconds} seconds. Retry left: ${_retry_counter}"
-              sleep ${_instance_check_sleep_seconds}
+              sleep "${_instance_check_sleep_seconds}"
             fi
           done
           if ${_instance_check_success:?}; then
@@ -975,7 +976,7 @@ local provision_instances(setup) =
       . "${generated_files_path:?}/lib/project_config.sh"
 
       echo "${status_info} ${info_text}Generating machines_config.json for ansible${reset_text}"
-      cat "${instances_catalog_file:?}" > "${project_root_path}/%(ansible_inventory_path)s/machines_config.json"
+      cat "${instances_catalog_file:?}" > "${project_source_path}/%(ansible_inventory_path)s/machines_config.json"
       echo "${status_info} ${info_text}Instances basic provisioning${reset_text}"
       %(instances_provision)s
       echo "Check snapshots for instances"
@@ -1044,8 +1045,6 @@ local provision_instances(setup) =
 
       echo "${status_info} ${info_text}Check instances${reset_text}"
       %(instances_destroy)s
-      echo "${status_info} ${info_text}Deleting '${project_basefolder:?}'${reset_text}"
-      rm -rfv "${project_basefolder:?}"
       %(remove_network)s
       echo "${status_success} ${good_result_text}Deleting project '${project_name:?}' completed!${reset_text}"
     ||| % {
@@ -1076,7 +1075,7 @@ local provision_instances(setup) =
           _instance_snaphot_name=base-snapshot
           echo "Restoring '${instance_name:?}' snapshot '${_instance_snaphot_name:?}'"
           %(instance_shutdown)s
-          VBoxManage snapshot ${instance_name:?} restore ${_instance_snaphot_name:?}
+          VBoxManage snapshot "${instance_name:?}" restore "${_instance_snaphot_name:?}"
           %(instance_wait_started)s
         ||| % {
           instance_config: instance_config(setup, instance),
@@ -1110,7 +1109,7 @@ local provision_instances(setup) =
       . "${generated_files_path:?}/lib/utils.sh"
       . "${generated_files_path:?}/lib/project_config.sh"
 
-      if [ $# -lt 1 ]; then
+      if [[ $# -lt 1 ]]; then
         for instance in %(instances)s; do
           echo "${info_text}Instance:${reset_text} ${bold_text}${instance}${reset_text}"
           VBoxManage showvminfo "${instance}" --machinereadable
@@ -1131,7 +1130,7 @@ local provision_instances(setup) =
       . "${generated_files_path:?}/lib/utils.sh"
       . "${generated_files_path:?}/lib/project_config.sh"
 
-      if [ $# -lt 1 ]; then
+      if [[ $# -lt 1 ]]; then
         echo "${info_text}Usage:${reset_text} ${bold_text}$0 VIRTUAL_MACHINE_IP${reset_text}" >&2
         exit 1
       fi

@@ -2,6 +2,7 @@ local config = import 'config.libsonnet';
 assert std.isObject(config);
 
 local admin_user =
+  assert std.objectHas(config, 'admin_username') : 'Missing admin_username in config.libsonnet';
   local use_ssh_authorized_keys =
     std.objectHas(config, 'admin_ssh_authorized_keys')
     && std.isArray(config.admin_ssh_authorized_keys)
@@ -62,37 +63,43 @@ local add_default_machine_data(setup, instance) =
           |||,
       },
     ],
-    network: config.network,
+    network: std.get(config, 'network', {}),
   } + instance;
+
+local get_config_value(config, key) =
+  assert std.objectHas(config, key) : 'Missing %s in config.libsonnet' % key;
+  local value = std.trim(std.get(config, key));
+  if std.isEmpty(value) then
+    error 'Empty %s.' % key
+  else
+    value;
 
 // Exported
 {
   local setup = self,
-  project_name: config.project_name,
-  project_domain: config.project_domain,
-  host_architecture: std.extVar('host_architecture'),
-  orchestrator_name: std.extVar('orchestrator_name'),
-  project_root_path: std.extVar('project_root_path'),
-  project_generator_path: self.project_root_path + '/platform/project-script-generator',
-  projects_folder: '${HOME}/.local/projects',
-  project_basefolder: self.projects_folder + '/' + self.project_name,
+  project_name: get_config_value(config, 'project_name'),
+  project_domain: get_config_value(config, 'project_domain'),
+  host_architecture: get_config_value(config, 'host_architecture'),
+  orchestrator_name: get_config_value(config, 'orchestrator_name'),
+  project_source_path: get_config_value(config, 'project_source_path'),
+  project_basefolder: get_config_value(config, 'project_basefolder'),
+  project_generator_path: self.project_source_path + '/platform/project-script-generator',
   os_distro: 'ubuntu',
   os_release_codename: 'noble',
-  ansible_inventory_path:
-    if std.objectHas(config, 'ansible_inventory_path') then
-      config.ansible_inventory_path
-    else '.',
+  ansible_inventory_path: get_config_value(config, 'ansible_inventory_path'),
   virtual_machines: [
     add_default_machine_data(setup, {
+      local ansible_files_path = get_config_value(config, 'ansible_files_path'),
+      local kubernetes_files_path = get_config_value(config, 'kubernetes_files_path'),
       hostname: 'ansible-controller',
       memory: '2048',
       mounts+: [
         {
-          host_path: '${project_root_path:?}/' + config.ansible_files_path,
+          host_path: '${project_source_path:?}/' + ansible_files_path,
           guest_path: '/ansible',
         },
         {
-          host_path: '${project_root_path:?}/' + config.kubernetes_files_path,
+          host_path: '${project_source_path:?}/' + kubernetes_files_path,
           guest_path: '/kubernetes',
         },
       ],
@@ -207,6 +214,6 @@ local add_default_machine_data(setup, instance) =
         |||,
     },
   ],
-  network: config.network,
-  dns_servers: config.dns_servers,
+  network: std.get(config, 'network', {}),
+  dns_servers: std.get(config, 'dns_servers', []),
 }

@@ -6,9 +6,8 @@ local generic_project_config(setup) =
   assert std.isObject(setup);
   assert std.objectHas(setup, 'project_name');
   assert std.objectHas(setup, 'project_domain');
-  assert std.objectHas(setup, 'projects_folder');
   assert std.objectHas(setup, 'project_basefolder');
-  assert std.objectHas(setup, 'project_root_path');
+  assert std.objectHas(setup, 'project_source_path');
   assert std.objectHas(setup, 'project_generator_path');
   assert std.objectHas(setup, 'os_release_codename');
   assert std.objectHas(setup, 'host_architecture');
@@ -16,9 +15,8 @@ local generic_project_config(setup) =
     # -- start: generic-project-config
     project_name=%(project_name)s
     project_domain="${project_name:?}.test"
-    projects_folder=%(projects_folder)s
     project_basefolder="%(project_basefolder)s"
-    project_root_path="%(project_root_path)s"
+    project_source_path="%(project_source_path)s"
     project_generator_path="%(project_generator_path)s"
     os_release_codename=%(os_release_codename)s
     host_architecture=%(host_architecture)s
@@ -29,9 +27,8 @@ local generic_project_config(setup) =
   ||| % {
     project_name: setup.project_name,
     project_domain: setup.project_domain,
-    projects_folder: setup.projects_folder,
     project_basefolder: setup.project_basefolder,
-    project_root_path: setup.project_root_path,
+    project_source_path: setup.project_source_path,
     project_generator_path: setup.project_generator_path,
     os_release_codename: setup.os_release_codename,
     host_architecture: setup.host_architecture,
@@ -41,7 +38,6 @@ local multipass_project_config(setup) =
   assert std.isObject(setup);
   assert std.objectHas(setup, 'project_name');
   assert std.objectHas(setup, 'project_domain');
-  assert std.objectHas(setup, 'projects_folder');
   assert std.objectHas(setup, 'project_basefolder');
   assert std.objectHas(setup, 'os_release_codename');
   assert std.objectHas(setup, 'host_architecture');
@@ -52,7 +48,6 @@ local multipass_project_config(setup) =
   ||| % {
     project_name: setup.project_name,
     project_domain: setup.project_domain,
-    projects_folder: setup.projects_folder,
     project_basefolder: setup.project_basefolder,
     os_release_codename: setup.os_release_codename,
     host_architecture: setup.host_architecture,
@@ -267,13 +262,20 @@ local destroy_instance(setup, instance) =
   assert std.objectHas(instance, 'hostname');
 
   |||
-    _instance_name=%(hostname)s
-    if multipass delete --purge "${_instance_name}"; then
-    	echo "${status_success} Instance '${_instance_name}' deleted!"
+    %(instance_config)s
+    if multipass delete --purge "${instance_name}"; then
+    	echo "${status_success} Instance '${instance_name}' deleted!"
     else
-    	echo "${status_success} Instance '${_instance_name}' does not exist!"
+    	echo "${status_success} Instance '${instance_name}' does not exist!"
     fi
+    _instance_tmp_folder=${instance_basefolder:?}/tmp
+    echo "${status_info} ${info_text}Deleting '${instance_name:?}' tmp files${reset_text}"
+    rm -rfv "${_instance_tmp_folder:?}"/*
+    _instance_disks_folder=${instance_basefolder:?}/disks
+    echo "${status_info} ${info_text}Deleting '${instance_name:?}' disks files${reset_text}"
+    rm -rfv "${_instance_disks_folder:?}"/*
   ||| % {
+    instance_config: instance_config(setup, instance),
     hostname: instance.hostname,
   };
 
@@ -397,7 +399,7 @@ local virtualmachine_command(setup, command) =
       echo "Checking instances"
       %(instances_check)s
       echo "Generating machines_config.json for ansible"
-      cat "${instances_catalog_file:?}" > "${project_root_path}/%(ansible_inventory_path)s/machines_config.json"
+      cat "${instances_catalog_file:?}" > "${project_source_path}/%(ansible_inventory_path)s/machines_config.json"
       echo "${status_info} ${info_text}Instances basic provisioning${reset_text}"
       %(instances_provision)s
       echo "Check snapshots for instances"
@@ -456,8 +458,6 @@ local virtualmachine_command(setup, command) =
       . "${generated_files_path:?}/lib/project_config.sh"
       echo "Destroying instances"
       %(instances_destroy)s
-      echo "Deleting '${project_basefolder:?}'"
-      rm -rfv "${project_basefolder:?}"
       echo "${status_success} Deleting project '${project_name:?}' completed!"
     ||| % {
       instances_destroy: utils.shell_lines([

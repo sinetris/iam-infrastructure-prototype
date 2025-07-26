@@ -1,14 +1,14 @@
 // Run the following command to generate files:
-// project_root_path=$(cd ../../ && pwd)
+// project_source_path=$(cd ../../ && pwd)
 // project_generator_path=$(pwd)
-// generated_project_path="${project_root_path:?}/generated"
+// generated_project_path="${project_source_path:?}/generated"
 // jsonnet --string \
 //   --create-output-dirs \
 //   --multi "${generated_project_path:?}" \
-//   --ext-str project_root_path="${project_root_path:?}" \
+//   --ext-str project_source_path="${project_source_path:?}" \
 //   --ext-str orchestrator_name="${generator_orchestrator:?}" \
 //   --ext-str host_architecture="${host_architecture:?}" \
-//   --jpath "${project_root_path}" \
+//   --jpath "${project_source_path}" \
 //   --jpath "${project_generator_path:?}" \
 //   --jpath "${project_generator_path}/config" \
 //   "${project_generator_path}/project-files-generator.jsonnet"

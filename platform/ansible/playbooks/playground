@@ -35,6 +35,8 @@
         owner: ubuntu
         group: ubuntu
         mode: "u=rwx,g=rwx,o=rx"
+      vars:
+        ansible_remote_tmp: /tmp/.ansible-ubuntu/tmp
     - name: Run code example
       ansible.builtin.debug:
         msg: |

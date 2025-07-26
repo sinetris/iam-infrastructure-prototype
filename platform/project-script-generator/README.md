@@ -57,16 +57,28 @@ multipass start linux-desktop
 Generate admin password and ansible ssh keys:
 
 ```sh
+# Set variables
+instance_admin_password_path="generated/assets/passwords/admin"
+instance_admin_password_file="${instance_admin_password_path:?}/plain"
+instance_admin_password_salt_file="${instance_admin_password_path:?}/salt"
+instance_admin_password_hash_file="${instance_admin_password_path:?}/hash"
+
 # Create a directory for the generated password files
-_instance_admin_password_path="generated/assets/passwords/admin"
-mkdir -p "${_instance_admin_password_path:?}"
-# Create password
+mkdir -p "${instance_admin_password_path:?}"
+
+# Create plain password file
 INSTANCE_ADMIN_PASSWORD=changeme
-echo "${INSTANCE_ADMIN_PASSWORD:?}" > "${_instance_admin_password_path:?}/plain"
-openssl rand -base64 8 > "${_instance_admin_password_path:?}/salt"
-_instance_admin_password_salt=$(cat "${_instance_admin_password_path:?}/salt")
-openssl passwd -6 -salt "${_instance_admin_password_path:?}" "${INSTANCE_ADMIN_PASSWORD}" \
-  > "${_instance_admin_password_path:?}/hash"
+echo "${INSTANCE_ADMIN_PASSWORD:?}" > "${instance_admin_password_path:?}"
+
+# Create salt password file
+openssl rand -base64 8 > "${instance_admin_password_salt_file:?}"
+
+# Create hash password file
+_instance_admin_password=$(cat "${instance_admin_password_file:?}")
+_instance_admin_password_salt=$(cat "${instance_admin_password_salt_file:?}")
+openssl passwd -6 -salt "${_instance_admin_password_salt:?}" "${_instance_admin_password}" \
+  > "${instance_admin_password_hash_file:?}"
+
 # Generate SSH keys for ansible
 mkdir -p generated/assets/.ssh
 ssh-keygen -t ed25519 -C "automator@iam-demo.test" -f generated/assets/.ssh/id_ed25519 -q -N ""
@@ -76,11 +88,11 @@ Generate instances management scripts:
 
 ```sh
 # Set the project root path
-project_root_path="$(cd ../../ && pwd)"
+project_source_path="$(cd ../../ && pwd)"
 # Set the project generator path
 project_generator_path="$(pwd)"
 # Set the path for the generated files
-generated_project_path="${project_root_path:?}/generated"
+generated_project_path="${project_source_path:?}/generated"
 # Set the Orchestrator to be used in the Instances Generator script
 generator_orchestrator=multipass
 # Use 'arm64' for Apple silicon processors or 'amd64' for Intel and AMD 64bit CPUs
@@ -89,10 +101,10 @@ cp config/config.libsonnet.${generator_orchestrator}.example config/config.libso
 jsonnet --string \
   --create-output-dirs \
   --multi "${generated_project_path:?}" \
-  --ext-str project_root_path="${project_root_path:?}" \
+  --ext-str project_source_path="${project_source_path:?}" \
   --ext-str orchestrator_name="${generator_orchestrator:?}" \
   --ext-str host_architecture="${host_architecture:?}" \
-  --jpath "${project_root_path}" \
+  --jpath "${project_source_path}" \
   --jpath "${project_generator_path:?}" \
   --jpath "${project_generator_path}/config" \
   "${project_generator_path}/project-files-generator.jsonnet"
@@ -149,9 +161,9 @@ To remove networks, destroy all instances, and delete the generated project fold
 This script uses jsonnet.
 
 Remember to check the correct use of `%` when using with string formatting or
-interpolation (e.g. escape `%` using `%%`).
+interpolation (e.g. you might need to escape `%` using `%%`).
 
-Examples:
+For example, this jsonnet code:
 
 ```jsonnet
 {
@@ -168,6 +180,8 @@ Examples:
   |||,
 }
 ```
+
+generate the this JSON:
 
 ```json
 {
@@ -189,7 +203,8 @@ containing `%` and filter out those that should be correct.
 
 ```sh
 file_to_check=lib/orchestrators/vbox.libsonnet
-awk '/%/ && !/\|\|\| %|%(\([a-zA-Z0-9_]+\)){0,1}(0| |-|\+){0,1}[0-9]*(\.[0-9]+){0,1}(h|l|L){0,1}[diouxXeEfFgGcrs]/ {print NR, $0}' "${file_to_check:?}
+awk '/%/ && !/\|\|\| %|%(\([a-zA-Z0-9_]+\)){0,1}(0| |-|\+){0,1}[0-9]*(\.[0-9]+){0,1}(h|l|L){0,1}[diouxXeEfFgGcrs]/ {print NR, $0}' \
+  "${file_to_check:?}
 ```
 
 [python-printf-style]: <https://docs.python.org/3/library/stdtypes.html#printf-style-string-formatting> "printf-style String Formatting"
