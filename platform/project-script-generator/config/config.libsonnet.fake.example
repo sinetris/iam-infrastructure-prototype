@@ -1,5 +1,9 @@
 {
   project_name: 'iam-demo',
+  project_basefolder: std.extVar('project_basefolder'),
+  host_architecture: 'arm64',
+  orchestrator_name: 'fake',
+  project_source_path: std.extVar('project_source_path'),
   project_domain: 'iam-demo.test',
   ansible_ssh_authorized_keys: [],
   ansible_files_path: 'the ansible folder',

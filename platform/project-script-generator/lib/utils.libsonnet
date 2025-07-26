@@ -37,8 +37,7 @@
     assert std.objectHas(setup, 'project_domain');
     assert std.objectHas(setup, 'project_generator_path');
     assert std.objectHas(setup, 'project_name');
-    assert std.objectHas(setup, 'project_root_path');
-    assert std.objectHas(setup, 'projects_folder');
+    assert std.objectHas(setup, 'project_source_path');
     assert std.objectHas(setup, 'provisionings');
     assert std.objectHas(setup, 'virtual_machines');
     assert std.isArray(setup.provisionings);
@@ -72,8 +71,8 @@
     print_array():
       |||
         print_array() {
-          if [ $# -lt 3 ]; then
-            echo "Usage: ${bold_text}$0 <separator> <array>${reset_text}" >&2
+          if [[ $# -lt 3 ]]; then
+            echo "Usage: ${bold_text}print_array <separator> <array>${reset_text}" >&2
             exit 1
           fi
           local separator="$1"
@@ -89,8 +88,8 @@
     element_is_in_array():
       |||
         element_is_in_array() {
-          if [ $# -lt 2 ]; then
-            echo "Usage: ${bold_text}$0 <element> <array>${reset_text}" >&2
+          if [[ $# -lt 2 ]]; then
+            echo "Usage: ${bold_text}element_is_in_array <element> <array>${reset_text}" >&2
             exit 1
           fi
           local seeking="$1"
@@ -110,13 +109,13 @@
       |||
         generate_ansible_ssh_keys() {
           ansible_ssh_key_file="${generated_project_relative_path:?}/assets/.ssh/id_ed25519"
-          if [ -f "${project_root_path:?}/${ansible_ssh_key_file:?}" ]; then
+          if [[ -f "${project_source_path:?}/${ansible_ssh_key_file:?}" ]]; then
             echo " ${status_info} Using existing SSH keys for ansible."
           else
             check_dependency 'ssh-keygen'
             echo " ${status_action} Generating SSH keys for ansible ..."
-            mkdir -p "$(dirname "${project_root_path:?}/${ansible_ssh_key_file:?}")"
-            ssh-keygen -t ed25519 -C "automator@iam-demo.test" -f "${project_root_path:?}/${ansible_ssh_key_file:?}" -q -N ""
+            mkdir -p "$(dirname "${project_source_path:?}/${ansible_ssh_key_file:?}")"
+            ssh-keygen -t ed25519 -C "automator@iam-demo.test" -f "${project_source_path:?}/${ansible_ssh_key_file:?}" -q -N ""
             echo " ${status_success} SSH keys for ansible generated."
           fi
         }

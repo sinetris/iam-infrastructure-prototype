@@ -16,12 +16,11 @@ practices.
 - [🐣 Getting started](#-getting-started)
   - [⚙️ Setup](#️-setup)
     - [Dependencies](#dependencies)
-    - [Run](#run)
+    - [Generate and provision instances](#generate-and-provision-instances)
   - [💻 Linux desktop Instance](#-linux-desktop-instance)
     - [Connect using Remote Desktop](#connect-using-remote-desktop)
     - [Test self-signed certificates](#test-self-signed-certificates)
     - [Complete Setup](#complete-setup)
-      - [Configure environment variables and shell completion](#configure-environment-variables-and-shell-completion)
       - [Configure Forgejo ssh keys](#configure-forgejo-ssh-keys)
   - [🧑‍💻 Access Kubernetes cluster](#-access-kubernetes-cluster)
     - [Connecting from the console](#connecting-from-the-console)
@@ -171,12 +170,17 @@ This project will create and provision 3 instances:
 - [Jsonnet][jsonnet]
 - [Multipass][multipass] or [VirtualBox][virtualbox]
 
-#### Run
+#### Generate and provision instances
+
+The `project-management` script manages the creation, provisioning, and deletion
+of instances.
+
+Run `./project-management --help` to get a list of options.
 
 To execute all required steps, you can run:
 
 ```sh
-./project-management -a
+./project-management --all
 ```
 
 The script will prompt for a password (and confirmation) to be used for the
@@ -190,17 +194,40 @@ To avoid being prompted for the password, you can create the file
 INSTANCE_ADMIN_PASSWORD=changeme ./project-management -a
 ```
 
-The `-a` (or `--all`) option will perform all required steps sequentially and
-is equivalent to running `./project-management -g -c -b -w -p`.
+The `-a` (or `--all`) option will perform all required steps sequentially.
 
-If you want more control, you can perform the steps one at a time:
+By default, the script will use [multipass][multipass] and the host architecture,
+essentially the command `./project-management -a` is equivalent to running:
 
 ```sh
-./project-management --generate
-./project-management --configure
+./project-management -o multipass -a "$(uname -m)" -g -c -b -w -p
+```
+
+If you want more control, you can perform the steps in groups or one at a time:
+
+e.g.:
+
+```sh
+./project-management --generate --configure
 ./project-management --bootstrap
 ./project-management --wrap-up
 ./project-management --provision
+```
+
+#### Delete instances
+
+The `--delete` option will remove instances and related volumes, but keep the
+generated scripts and instances configuration.
+
+```sh
+./project-management --delete
+```
+
+To delete the local project folder, generated scripts, and instances configuration,
+use the `--purge` option alongside `--delete`.
+
+```sh
+./project-management --delete --purge
 ```
 
 ### 💻 Linux desktop Instance
@@ -238,23 +265,6 @@ screenshot.
 #### Complete Setup
 
 > **Note:** required to run only once
-
-##### Configure environment variables and shell completion
-
-Open a terminal and type:
-
-```sh
-# Configure iam-demo-tech k8s cluster as default
-echo 'export KUBECONFIG=~/.kube/config-iam-demo-tech' | sudo tee --append /etc/bash.bashrc
-# Add kubectl completion
-kubectl completion bash | sudo tee /etc/bash_completion.d/kubectl
-# Add kustomize completion
-kustomize completion bash | sudo tee /etc/bash_completion.d/kustomize
-# Add helm completion
-helm completion bash | sudo tee /etc/bash_completion.d/helm
-# Open a new shell tab or start a new shell to apply the changes
-exec $SHELL
-```
 
 ##### Configure Forgejo ssh keys
 

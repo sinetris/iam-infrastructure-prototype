@@ -13,25 +13,25 @@
       ]),
     },
   project_bootstrap(setup):
-    self.fake_script(setup, 'bootstrap'),
+    fake_script(setup, 'bootstrap'),
   project_show_configuration(setup):
-    self.fake_script(setup, 'show configuration'),
+    fake_script(setup, 'show configuration'),
   project_config(setup):
-    self.fake_script(setup, 'base config file'),
+    fake_script(setup, 'base config file'),
   project_wrap_up(setup):
-    self.fake_script(setup, 'wrap-up'),
+    fake_script(setup, 'wrap-up'),
   project_prepare_config(setup):
-    self.fake_script(setup, 'prepare-config'),
+    fake_script(setup, 'prepare-config'),
   project_provisioning(setup):
-    self.fake_script(setup, 'provisioning'),
+    fake_script(setup, 'provisioning'),
   project_delete(setup):
-    self.fake_script(setup, 'destroy'),
+    fake_script(setup, 'destroy'),
   project_snapshot_restore(setup):
-    self.fake_script(setup, 'snapshot restore'),
+    fake_script(setup, 'snapshot restore'),
   instances_status(setup):
-    self.fake_script(setup, 'list'),
+    fake_script(setup, 'list'),
   instance_shell(setup):
-    self.fake_script(setup, 'shell'),
+    fake_script(setup, 'shell'),
   instance_info(setup):
-    self.fake_script(setup, 'info'),
+    fake_script(setup, 'info'),
 }

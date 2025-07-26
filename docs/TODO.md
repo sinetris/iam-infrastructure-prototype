@@ -123,8 +123,12 @@ in some cases not the best tools for the job) to cover certain topics.
 - [ ] [Grafana OnCall][grafana-oncall]: on-call management system
 - [ ] [Grafana k6][grafana-k6]: load testing tool
 - [ ] [Wazuh][wazuh]: unified XDR and SIEM protection for endpoints and cloud workloads
-  > **Note:** on hold until all components can run on **arm64**.\
-  > See: <https://github.com/wazuh/wazuh/issues/18048>
+  > **Note:** Waiting for support of **arm64** architecture in official container
+  > images. \
+  > See: <https://github.com/wazuh/wazuh-docker/issues/1691>
+  >
+  > **Workaround:** use the images available at <https://hub.docker.com/u/zenjoy?page=1&search=wazuh>
+  > while waiting for the release of official images.
 - [ ] [HashiCorp Boundary][boundary]: simple and secure remote access
 - [ ] [Waypoint][waypoint]: lower cognitive load for applications deployment
 - [x] [Mailpit][mailpit]: Web and API based SMTP testing
@@ -174,13 +178,11 @@ in some cases not the best tools for the job) to cover certain topics.
   - [ ] apply instructions for Kubernetes certificates
     - [ ] [Manage TLS Certificates in a Cluster][kubernetes-managing-tls]
     - [ ] [PKI certificates and requirements][kubernetes-pki-best-practices]
-  - [ ] ~~use in combination with [mkcert][mkcert] to install the root ca
+  - [x] ~~use in combination with [mkcert][mkcert] to install the root ca
         certs in client machines trust stores~~
       > not flexible enough for our usecase
   - [x] useful code to generate [CA + intermediate certificate][k3s-custom-ca]
         can be found in k3s
-  - [ ] generate [Wazuh](../kubernetes/apps/wazuh/) certs using previously
-        generated root CA certs
   - [x] install CA certificates chain in instances
   - [x] test generated CA certificates for installed applications domains from
         the `linux-desktop` instance
@@ -197,7 +199,9 @@ in some cases not the best tools for the job) to cover certain topics.
   - [ ] configure dashboards in Grafana
   - [x] use MinIO credentials and endpoint from Secret in Loki
   - [x] use MinIO credentials and endpoint from Secret in Tempo
-- [ ] configure [Wazuh][wazuh] (postponed)
+- [ ] configure [Wazuh][wazuh]
+  - [ ] generate [Wazuh](../kubernetes/apps/wazuh/) certs using previously
+        generated root CA certs
 - [ ] configure [Consul][consul]
   - [ ] configure [Consul Service Mesh][consul-service-mesh]
   - [ ] configure [Consul API Gateway][consul-api-gateway]
@@ -264,15 +268,15 @@ section in [Kubernetes development tips](development/kubernetes.md).
   - [x] rename `project_configuration` to `project_show_configuration` (create
         file `project-show-configuration.sh`)
     - [ ] `project_show_configuration` shows generated project configuration
-  - [ ] change `project_delete` (was `virtualmachines_destroy`)
+  - [x] change `project_delete` (was `virtualmachines_destroy`)
     - [x] rename `virtualmachines_destroy` to `project_delete`
     - [x] rename `instances-destroy.sh` to `project-delete.sh`
-    - [ ] delete (keep config)
-      - [ ] remove instances
-      - [ ] delete `${project_basefolder:?}/${instance_name:?}/disks`
-      - [ ] delete files in `${project_basefolder:?}/${instance_name:?}/tmp`
-    - [ ] add `--purge` option (destroy project)
-      - [ ] all in `delete` + remove `${project_basefolder:?}`
+    - [x] delete (keep config)
+      - [x] remove instances
+      - [x] delete `${project_basefolder:?}/${instance_name:?}/disks` content
+      - [x] delete `${project_basefolder:?}/${instance_name:?}/tmp` content
+    - [x] add `--purge` option (destroy project)
+      - [x] all in `delete` + remove `${project_basefolder}` and `${generated_project_path}`
   - [x] add `project_snapshot_restore` (create file `project-restore-snapshots.sh`)
   - [x] rename `virtualmachines_bootstrap` to `project_bootstrap` (create file `project-bootstrap.sh`)
   - [ ] split `project_bootstrap`

@@ -10,6 +10,6 @@
     check_sleep_time_seconds: $check_sleep_time_seconds,
     mac_address: $macaddr,
     network_interface_name: $nic,
-    network_interface_netplan_name: $nic,
+    network_interface_netplan_name: $netplan_nic,
   }
 }
