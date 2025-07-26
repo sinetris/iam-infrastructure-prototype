@@ -233,6 +233,15 @@ local create_instance(setup, instance) =
     	echo "${status_error} Could not get instance '${instance_name}' configuration!'" >&2
     	exit 1
     fi
+    _instance_unlock_passwd=$(multipass exec "${instance_name}" \
+    	-- /bin/bash 2>&1 <<-'END'
+    		sudo passwd --unlock "${USER}"
+    	END
+    ) && _exit_code=0 || _exit_code=$?
+    if [[ ${_exit_code} -ne 0 ]]; then
+    	echo "${status_error} Could not unlock default user password on instance '${instance_name}'!'" >&2
+    	exit 1
+    fi
      _instance_ipv4=$(echo "${_instance_status:?}" | jq --arg host "${instance_name:?}" '.info.[$host].ipv4[0]' --raw-output)
     _instance_nic_name=$(multipass exec "${instance_name}" \
     	-- /bin/bash 2>&1 <<-'END'
