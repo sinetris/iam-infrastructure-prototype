@@ -1,29 +1,30 @@
 # Instances creation
 
-- [Multipass](#multipass)
-  - [Setup](#setup)
-  - [Remove all Multipass instances](#remove-all-multipass-instances)
-  - [Get info](#get-info)
-  - [Modify instances](#modify-instances)
+- [Dependencies](#dependencies)
+  - [Multipass](#multipass)
+    - [Setup](#setup)
+    - [To remove all Multipass instances](#to-remove-all-multipass-instances)
+    - [Get info](#get-info)
+    - [Modify instances](#modify-instances)
+  - [VirtualBox](#virtualbox)
+- [Test script generator](#test-script-generator)
 - [Generate instances configuration files](#generate-instances-configuration-files)
 - [Manage instances](#manage-instances)
-- [Ubuntu ISO](#ubuntu-iso)
 - [Development](#development)
   - [Troubleshooting](#troubleshooting)
+  - [Ubuntu ISOs](#ubuntu-isos)
 
-## Multipass
+## Dependencies
 
-### Setup
+### Multipass
 
-```sh
-brew install multipass
-multipass get local.driver
-multipass set local.driver=qemu
-```
+#### Setup
+
+[Install Multipass](https://canonical.com/multipass/install)
 
 > On macOS, enable `Full Disk Access` for `multipassd` in `Provacy & Security`
 
-### Remove all Multipass instances
+#### To remove all Multipass instances
 
 ```sh
 # Do NOT run if you have other multipass instances you want to keep
@@ -32,7 +33,7 @@ multipass purge
 multipass list
 ```
 
-### Get info
+#### Get info
 
 ```sh
 multipass info --format yaml 'linux-desktop'
@@ -42,7 +43,7 @@ multipass get local.linux-desktop.memory
 multipass get local.linux-desktop.disk
 ```
 
-### Modify instances
+#### Modify instances
 
 ```sh
 multipass stop linux-desktop
@@ -51,6 +52,21 @@ multipass set local.linux-desktop.memory=4.0GiB
 multipass set local.linux-desktop.disk=10.0GiB
 multipass start linux-desktop
 ```
+
+### VirtualBox
+
+[Install VirtualBox](https://www.virtualbox.org/wiki/Downloads)
+
+## Test script generator
+
+To test if the script generator is working, run:
+
+```sh
+./test-generator.sh
+```
+
+The script will generate files in a temporary directory and then remove the
+generated files.
 
 ## Generate instances configuration files
 
@@ -87,27 +103,40 @@ ssh-keygen -t ed25519 -C "automator@iam-demo.test" -f generated/assets/.ssh/id_e
 Generate instances management scripts:
 
 ```sh
-# Set the project root path
+# Set a name for the generated project
+project_name=demo
+# Set the project source code root path
 project_source_path="$(cd ../../ && pwd)"
-# Set the project generator path
+# Set the path to the project-script-generator folder
 project_generator_path="$(pwd)"
 # Set the path for the generated files
 generated_project_path="${project_source_path:?}/generated"
-# Set the Orchestrator to be used in the Instances Generator script
+# Set the Orchestrator to be used to create the instances
 generator_orchestrator=multipass
-# Use 'arm64' for Apple silicon processors or 'amd64' for Intel and AMD 64bit CPUs
+# Set the host architecture (e.g, 'arm64' for Apple silicon, 'amd64' for Intel/AMD 64bit CPUs)
+# We can use 'uname -m' for auto-discovering
 host_architecture=$(uname -m)
+# Set a path for the instances data
+project_basefolder="$HOME/.local/projects/${project_name:?}"
+
+# Copy a configuration example
 cp config/config.libsonnet.${generator_orchestrator}.example config/config.libsonnet
+
+# Generate the scripts
 jsonnet --string \
+  --max-trace 1 \
   --create-output-dirs \
   --multi "${generated_project_path:?}" \
+  --ext-str project_name="${project_name:?}" \
   --ext-str project_source_path="${project_source_path:?}" \
+  --ext-str project_basefolder="${project_basefolder:?}" \
   --ext-str orchestrator_name="${generator_orchestrator:?}" \
   --ext-str host_architecture="${host_architecture:?}" \
-  --jpath "${project_source_path}" \
   --jpath "${project_generator_path:?}" \
   --jpath "${project_generator_path}/config" \
   "${project_generator_path}/project-files-generator.jsonnet"
+
+# Make generated scripts executables
 chmod u+x "${generated_project_path}"/*.sh
 ```
 
@@ -126,11 +155,13 @@ Create and provision the instances:
 ./project-prepare-config.sh
 # Create project network and instances
 ./project-bootstrap.sh
-# Wrap-up basic project setup
+# Wrap-up basic project setup (and make instances snapshots)
 ./project-wrap-up.sh
 # Automated provisioning
 ./project-provisioning.sh
 ```
+
+Check the instances:
 
 ```sh
 # Get all instances status
@@ -143,16 +174,17 @@ Create and provision the instances:
 ./instance-shell.sh ansible-controller
 ```
 
+To restore instances snapshots (rollback to the state before provisioning), use:
+
+```sh
+./project-restore-snapshots.sh
+```
+
 To remove networks, destroy all instances, and delete the generated project folder:
 
 ```sh
 ./project-delete.sh
 ```
-
-## Ubuntu ISO
-
-[Live Server](https://cdimage.ubuntu.com/releases/24.04/release/ubuntu-24.04.1-live-server-arm64.iso)
-[Cloud Image](https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-arm64.img)
 
 ## Development
 
@@ -206,5 +238,10 @@ file_to_check=lib/orchestrators/vbox.libsonnet
 awk '/%/ && !/\|\|\| %|%(\([a-zA-Z0-9_]+\)){0,1}(0| |-|\+){0,1}[0-9]*(\.[0-9]+){0,1}(h|l|L){0,1}[diouxXeEfFgGcrs]/ {print NR, $0}' \
   "${file_to_check:?}
 ```
+
+### Ubuntu ISOs
+
+- [Live Server](https://cdimage.ubuntu.com/releases/) (`ubuntu-[version]-live-server-[architecture].iso`)
+- [Cloud Image](https://cloud-images.ubuntu.com/) (`[version-name]-server-cloudimg-[architecture].img`)
 
 [python-printf-style]: <https://docs.python.org/3/library/stdtypes.html#printf-style-string-formatting> "printf-style String Formatting"
