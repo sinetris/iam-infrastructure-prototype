@@ -1,0 +1,17 @@
+---
+opensearch_security.multitenancy.enabled: false
+opensearch_security.readonly_mode.roles:
+- "kibana_read_only"
+opensearch.hosts: https://indexer:9200
+opensearch.requestHeadersAllowlist:
+- authorization
+- securitytenant
+opensearch.ssl.certificateAuthorities:
+- "/usr/share/wazuh-dashboard/certs/root-ca.pem"
+opensearch.ssl.verificationMode: none
+server.host: 0.0.0.0
+server.port: 5601
+server.ssl.certificate: "/usr/share/wazuh-dashboard/certs/cert.pem"
+server.ssl.enabled: true
+server.ssl.key: "/usr/share/wazuh-dashboard/certs/key.pem"
+uiSettings.overrides.defaultRoute: /app/wz-home
