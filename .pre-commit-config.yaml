@@ -5,7 +5,7 @@ exclude: |
   )$
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       # Git style
       - id: check-added-large-files
@@ -38,7 +38,7 @@ repos:
       - id: pretty-format-json
         args: ["--autofix", "--no-sort-keys"]
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.10.0.1
+    rev: v0.11.0.1
     hooks:
       - id: shellcheck
         args:
@@ -106,7 +106,7 @@ repos:
         types: [file, yaml]
         exclude: ^platform\/ansible\/installed\/.*
   - repo: https://github.com/ansible/ansible-lint
-    rev: v25.7.0
+    rev: v25.8.2
     hooks:
       - id: ansible-lint
         args:
