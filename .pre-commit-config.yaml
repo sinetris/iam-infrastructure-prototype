@@ -38,7 +38,7 @@ repos:
       - id: pretty-format-json
         args: ["--autofix", "--no-sort-keys"]
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.11.0.1
+    rev: v0.11.0.1-1
     hooks:
       - id: shellcheck
         args:
@@ -59,13 +59,13 @@ repos:
         #   )$
   # Markdown/CommonMark Linter
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.45.0
+    rev: v0.49.1
     hooks:
       - id: markdownlint
         # Makefile Linter
   # Jsonnet Linter e Formatter
   - repo: https://github.com/google/go-jsonnet
-    rev: v0.21.0
+    rev: v0.22.0
     hooks:
       - id: jsonnet-format
       - id: jsonnet-lint
@@ -78,7 +78,7 @@ repos:
         pass_filenames: false
   # YAML Formatter
   - repo: https://github.com/google/yamlfmt
-    rev: v0.17.2
+    rev: v0.21.0
     hooks:
       # Generic
       - id: yamlfmt
@@ -106,7 +106,7 @@ repos:
         types: [file, yaml]
         exclude: ^platform\/ansible\/installed\/.*
   - repo: https://github.com/ansible/ansible-lint
-    rev: v25.8.2
+    rev: v26.8.0
     hooks:
       - id: ansible-lint
         args:
